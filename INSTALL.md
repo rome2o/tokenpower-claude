@@ -33,6 +33,10 @@ Some mods can use more tools. They work without them.
    /plugin install browser-screenshot-compressor@tokenpower-claude
    /plugin install mods-manager@tokenpower-claude
    /plugin install token-savings-tracker@tokenpower-claude
+   /plugin install mcp-schema-auditor@tokenpower-claude
+   /plugin install context-bloat-auditor@tokenpower-claude
+   /plugin install context-meter@tokenpower-claude
+   /plugin install compaction-pruner@tokenpower-claude
    ```
 
 4. Load them. Type:

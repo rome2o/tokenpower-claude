@@ -1,14 +1,19 @@
-import { read, update } from 'claude-code'
+import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Row, Totals, View } from '../types'
 
-import { ACCENT, BAD, compactAtom, GOOD, INFO, ledgerAtom, liveAtom, NAME, PANE, PER_M, SHOW_ROWS, TAIL_LINES, TITLE, viewAtom, WARN } from './constants.ts'
+import { ACCENT, BAD, EMPTY_VIEW, GOOD, INFO, NAME, PANE, PER_M, SHOW_ROWS, TAIL_LINES, TITLE, WARN } from './constants.ts'
 import { S } from './state.ts'
 import { cacheOf, localDay, modelLabel, modName, priceOf, rowName } from './pure.ts'
 import { clip, count, fmt, helperLine, money, partLines, timeLabel, todayLabel, usdWords } from './format.ts'
 import { addCompaction, firstFire, log, onMeasure, openFile, readLive, readSwitch, setHidden, tilde, toggleDetail } from './io.ts'
 import { refresh } from './refresh.ts'
+
+const ledgerAtom = atom({ plugin: 'token-savings-tracker', key: 'ledger' } as const, null, { shape: 'ledger-5' })
+const liveAtom = atom({ plugin: 'token-savings-tracker', key: 'live' } as const, null, { shape: 'live-1' })
+const compactAtom = atom({ plugin: 'token-savings-tracker', key: 'compactions' } as const, [], { shape: 'compactions-1' })
+const viewAtom = atom({ plugin: 'token-savings-tracker', key: 'view' } as const, EMPTY_VIEW, { shape: 'view-1' })
 
 // Token Savings Tracker reads ~/.claude/mods-logs/savings.jsonl, the ledger every
 // token-saving mod appends to, and shows what they saved. It never writes it.

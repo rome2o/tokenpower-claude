@@ -1,12 +1,19 @@
-import { read, update } from 'claude-code'
+import { atom, read, update } from 'claude-code'
 import type { EngineInterface, SessionContextUsage, SessionCost } from 'claude-code'
 
 import type { Compaction, Ledger, Live } from '../types'
 
-import { compactAtom, DETAIL_CHARS, HIDE_KEY, ledgerAtom, liveAtom, NAME, PANE, viewAtom } from './constants.ts'
+import { DETAIL_CHARS, EMPTY_VIEW, HIDE_KEY, NAME, PANE } from './constants.ts'
 import { fired, S } from './state.ts'
 
-export const switchesPath = ($: EngineInterface) => `${$.plugin.root.split('/.claude/')[0] ?? ''}/.claude/mods/switches.json`
+const ledgerAtom = atom({ plugin: 'token-savings-tracker', key: 'ledger' } as const, null, { shape: 'ledger-5' })
+const liveAtom = atom({ plugin: 'token-savings-tracker', key: 'live' } as const, null, { shape: 'live-1' })
+const compactAtom = atom({ plugin: 'token-savings-tracker', key: 'compactions' } as const, [], { shape: 'compactions-1' })
+const viewAtom = atom({ plugin: 'token-savings-tracker', key: 'view' } as const, EMPTY_VIEW, { shape: 'view-1' })
+
+export function switchesPath($: EngineInterface) {
+  return `${$.plugin.root.split('/.claude/')[0] ?? ''}/.claude/mods/switches.json`
+}
 export const ledgerPath = () => `${S.home}/.claude/mods-logs/savings.jsonl`
 export const samplePath = () => `${S.root}/test/sample-savings.jsonl`
 export const tilde = (p: string) => (S.home && p.startsWith(S.home) ? `~${p.slice(S.home.length)}` : p)

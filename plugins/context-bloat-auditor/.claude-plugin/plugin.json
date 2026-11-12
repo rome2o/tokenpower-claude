@@ -1,0 +1,9 @@
+{
+  "name": "context-bloat-auditor",
+  "version": "0.1.0",
+  "description": "/context-audit lists the always-loaded items that cost the most tokens (CLAUDE.md files, memory, skills, agents), flags big items and duplicate names, and never reads the contents of your files",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Kazim Ali"
+  }
+}

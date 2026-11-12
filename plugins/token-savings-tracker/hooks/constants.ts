@@ -1,5 +1,3 @@
-import { atom } from 'claude-code'
-
 import type { View } from '../types'
 
 export const NAME = 'token-savings-tracker'
@@ -24,10 +22,6 @@ export const INFO = '#2563eb'
 export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 export const EMPTY_VIEW: View = { filter: 'today', open: '', detail: '', detailError: '', note: '' }
-export const ledgerAtom = atom({ plugin: 'token-savings-tracker', key: 'ledger' } as const, null, { shape: 'ledger-5' })
-export const liveAtom = atom({ plugin: 'token-savings-tracker', key: 'live' } as const, null, { shape: 'live-1' })
-export const compactAtom = atom({ plugin: 'token-savings-tracker', key: 'compactions' } as const, [], { shape: 'compactions-1' })
-export const viewAtom = atom({ plugin: 'token-savings-tracker', key: 'view' } as const, EMPTY_VIEW, { shape: 'view-1' })
 // "token-savings-tracker:hidden": true in switches.json closes the pane in every chat.
 export const HIDE_KEY = `${NAME}:hidden`
 
