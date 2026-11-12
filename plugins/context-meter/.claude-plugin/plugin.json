@@ -1,0 +1,9 @@
+{
+  "name": "context-meter",
+  "version": "0.1.0",
+  "description": "A live band above the prompt: what fills the context window by category, how close it is to compaction, this session's cost as Claude reports it, and today's tokens saved by the other mods",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Kazim Ali"
+  }
+}

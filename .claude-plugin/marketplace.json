@@ -3,7 +3,7 @@
   "owner": {
     "name": "Kazim Ali"
   },
-  "description": "Seven mods that cut token cost, plus a /mods switchboard and a /savings pane",
+  "description": "Thirteen mods that cut token cost or show where tokens go, plus a /mods switchboard and a /savings pane",
   "plugins": [
     {
       "name": "large-file-reader",
@@ -58,6 +58,30 @@
       "source": "./plugins/token-savings-tracker",
       "description": "/savings opens the Token Savings Tracker pane: every token the other mods saved, with today's and this chat's totals",
       "version": "0.2.0"
+    },
+    {
+      "name": "mcp-schema-auditor",
+      "source": "./plugins/mcp-schema-auditor",
+      "description": "/mcp-cost shows how many tokens each MCP server's tool definitions cost in every request, ranked, and suggests which to disable with /mcp. It never changes your config",
+      "version": "0.1.0"
+    },
+    {
+      "name": "context-bloat-auditor",
+      "source": "./plugins/context-bloat-auditor",
+      "description": "/context-audit lists the always-loaded items that cost the most tokens (CLAUDE.md files, memory, skills, agents), flags items over 2,000 tokens and duplicate names, and shows home paths as ~. Read-only",
+      "version": "0.1.0"
+    },
+    {
+      "name": "context-meter",
+      "source": "./plugins/context-meter",
+      "description": "A live band above the prompt: what fills the context window by category, how close it is to compaction, this session's cost as the engine reports it, and today's tokens saved by the other mods",
+      "version": "0.1.0"
+    },
+    {
+      "name": "compaction-pruner",
+      "source": "./plugins/compaction-pruner",
+      "description": "Off by default. When you compact, shortens old large tool results with simple local rules, keeps the original text (secrets masked) in a folder you can open, and lets core write the summary. It deletes nothing and makes no network or model calls. /prune dry shows what it would do first",
+      "version": "0.1.0"
     }
   ]
 }

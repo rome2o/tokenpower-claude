@@ -1,6 +1,6 @@
 # Tokenpower for Claude: token-saving mods and plugin marketplace
 
-Tokenpower is a Claude plugin marketplace with nine mods that cut token cost: cheaper models read big files, web pages and screenshots first, subagents move to lower tiers, and a pane totals what you saved. Each mod switches on or off on its own.
+Tokenpower is a Claude plugin marketplace with thirteen mods that cut token cost or show where your tokens go: cheaper models read big files, web pages and screenshots first, subagents move to lower tiers, panes total what you saved and audit what fills the context window, and a pruner can shorten old tool results at compaction. Each mod switches on or off on its own.
 
 Requires Claude 2.1.287 or newer (terminal), or 2.1.286 or newer (desktop app). macOS is the tested platform.
 
@@ -16,9 +16,9 @@ In Claude:
 /reload-plugins
 ```
 
-Type `/mods` to see every mod and switch each on or off. Type `/savings` for the totals. The other six mods install the same way, for example `/plugin install web-research-saver@tokenpower-claude`.
+Type `/mods` to see every mod and switch each on or off. Type `/savings` for the totals. The other mods install the same way, for example `/plugin install web-research-saver@tokenpower-claude`.
 
-## The nine mods
+## The thirteen mods
 
 | Mod | What it does |
 |---|---|
@@ -31,12 +31,18 @@ Type `/mods` to see every mod and switch each on or off. Type `/savings` for the
 | browser-screenshot-compressor | Shrinks browser screenshots, or has Haiku describe them in words. |
 | mods-manager | The `/mods` pane. Finds every mod on the machine and switches each on or off. |
 | token-savings-tracker | The `/savings` pane. Totals the tokens the other mods saved. |
+| mcp-schema-auditor | The `/mcp-cost` pane. Ranks your MCP servers by the tokens their tool definitions add to every request, and suggests which to disable with `/mcp`. Estimates only. Never changes your config. |
+| context-bloat-auditor | The `/context-audit` pane. Lists the always-loaded items that cost the most tokens and flags big or duplicated ones. Read-only. |
+| context-meter | The `/context-meter` band above the prompt. Shows context by category, distance to compaction, session cost as the engine reports it, and today's tokens saved. |
+| compaction-pruner | Off by default. At compaction, shortens old large tool results and keeps the originals in a folder you can open. Dry run first. Deletes nothing. |
+
+## Status of the four newest mods
+
+The four newest mods (mcp-schema-auditor, context-bloat-auditor, context-meter and compaction-pruner, all version 0.1.0) have been type-checked and unit-checked, but they have not yet been run in a live Claude session. Four details still need a live check: whether token figures include MCP server instructions, how hex colours render, how bands stack, and which unit the percentage uses. They make no savings claims, and the pruner does not write to the savings ledger, so `/savings` does not count it.
 
 ## How it saves tokens
 
-- **Progressive disclosure.** A cheap model reads the large input and hands Claude short notes plus a path to the full result, so the full text is read only when needed.
-- **Right-sized models and effort.** Subagent tasks and prompts go to the cheapest tier that can do them.
-- **Cache and context awareness.** The cache timer and context handoff avoid paying to rebuild a cold or oversized chat.
+A cheap model reads large inputs and hands Claude short notes plus a path to the full result. Subagent tasks and prompts go to the cheapest tier that can do them. The cache timer and context handoff avoid paying to rebuild a cold or oversized chat.
 
 ## Optional tools
 
@@ -46,7 +52,11 @@ Type `/mods` to see every mod and switch each on or off. Type `/savings` for the
 
 ## What they touch
 
-The mods keep shared state under `~/.claude/mods`, `~/.claude/mods-logs` and `~/.claude/handoffs`. Turning a mod off in `/mods` leaves the others running. The web research saver fetches public URLs found in search results and skips local and private addresses. It treats fetched text as untrusted data. The large file reader only opens saved outputs under `~/.claude/projects/`. The context handoff reads the chat transcript to write its summary. See `SECURITY.md`.
+The mods keep shared state under `~/.claude/mods`, `~/.claude/mods-logs` and `~/.claude/handoffs`. Turning a mod off in `/mods` leaves the others running. The web research saver fetches public URLs found in search results and skips local and private addresses. It treats fetched text as untrusted data. The large file reader only opens saved outputs under `~/.claude/projects/`. The context handoff reads the chat transcript to write its summary.
+
+The four newest mods read only engine-reported sizes, the savings ledger and the switchboard. They make no network calls. compaction-pruner is off by default, deletes nothing, runs no command, and masks API keys, tokens and private key blocks in the saved copies it keeps under `~/.claude/mods-logs/compaction-pruner/`. context-bloat-auditor never reads your file contents and hides credential-like file names.
+
+See `SECURITY.md`.
 
 ## Contributing and license
 

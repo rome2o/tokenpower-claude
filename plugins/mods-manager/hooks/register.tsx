@@ -114,6 +114,7 @@ const KNOWN: Record<string, Known> = {
   'context-router': { title: 'Context Router', what: 'Picks the skills and vault files each message needs', group: 'save' },
   'effort-level-switcher': { title: 'Effort Level Switcher', what: 'Picks the effort level each prompt needs', group: 'save' },
   'context-handoff': { title: 'Context Handoff', what: 'Moves a long chat to a fresh one', group: 'save', hide: true, ask: true, tip: '/fresh to show it' },
+  'compaction-pruner': { title: 'Compaction Pruner', what: 'Shortens old big tool results when you compact (off by default)', group: 'save', tip: '/prune to switch on, dry-run first' },
   'prompt-cache-timer': { title: 'Prompt Cache Timer', what: 'Counts down until the cache goes cold', group: 'save', hide: true, tip: '/cacheclock to show or hide' },
   'token-savings-tracker': { title: 'Token Savings Tracker', what: 'Shows what each mod really saved', group: 'save', pane: true, hide: true, ask: true, tip: '/savings to open' },
 
@@ -124,7 +125,9 @@ const KNOWN: Record<string, Known> = {
   'prompt-editor': { title: 'Prompt Editor', what: 'Edits prompts and replies on screen only, for recordings', group: 'chat' },
   'mods-manager': { title: 'Mods Manager', what: 'This switchboard', group: 'chat', tip: '/mods to open' },
 
-  'context-meter': { title: 'Context Meter', what: 'Colour bar of how full the chat is', group: 'show', hide: true, tip: '/meter to show or hide' },
+  'context-meter': { title: 'Context Meter', what: 'Colour bar of how full the chat is', group: 'show', hide: true, tip: '/context-meter to show or hide' },
+  'mcp-schema-auditor': { title: 'MCP Schema Auditor', what: 'Shows what each MCP server costs per request', group: 'show', hide: true, tip: '/mcp-cost to open' },
+  'context-bloat-auditor': { title: 'Context Bloat Auditor', what: 'Shows which always-loaded items cost the most', group: 'show', hide: true, tip: '/context-audit to open' },
   'context-gauge': { title: 'Context Gauge', what: 'Shows what fills the context window', group: 'show', hide: true, tip: '/gauge to show or hide' },
   'helper-desk': { title: 'Helper Desk', what: 'Task progress bar above the prompt, plus a card per subagent', group: 'show', pane: true, hide: true, ask: true, tip: '/helpers to open' },
   'output-tray': { title: 'Output Tray', what: 'Lists files and links made here', group: 'show', pane: true, hide: true, ask: true, tip: '/tray to open' },

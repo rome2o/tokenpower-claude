@@ -1,0 +1,9 @@
+{
+  "name": "mcp-schema-auditor",
+  "version": "0.1.0",
+  "description": "/mcp-cost shows how many tokens each MCP server's tool definitions cost in every request, ranked, and suggests which to disable with /mcp",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Kazim Ali"
+  }
+}

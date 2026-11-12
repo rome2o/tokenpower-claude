@@ -1,0 +1,9 @@
+{
+  "name": "compaction-pruner",
+  "version": "0.1.0",
+  "description": "Off by default. When you compact, shortens old large tool results with simple local rules and keeps the original text (secrets masked) in a folder you can open. It deletes nothing and makes no network or model calls",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Kazim Ali"
+  }
+}
