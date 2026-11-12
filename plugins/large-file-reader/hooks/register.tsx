@@ -6,14 +6,11 @@ import { PART_WORDS, REMOVED, statusText } from './commands.ts'
 import { connector, purpose } from './connector.ts'
 import {
   BAD,
-  CARDS,
   DRAW_NOTES_MAX,
   GOOD,
   HAIKU,
   IMAGE_EXT,
   NAME,
-  OFF,
-  OPEN,
   PANE,
   PANE_TITLE,
   READERS,
@@ -33,6 +30,10 @@ import type { ToolOut } from './state.ts'
 import { checkOpen, partOn, readSwitch, takeFull } from './switches.ts'
 import { extOf, fmt, tokens } from './text.ts'
 import { MASCOT_PX, clockOf, cutText, fileUrl, mascotSvg, toolOf, usdText } from './ui.ts'
+
+const CARDS = { plugin: 'large-file-reader', key: 'cards' } as const
+const OPEN = { plugin: 'large-file-reader', key: 'open' } as const
+const OFF = { plugin: 'large-file-reader', key: 'off' } as const
 
 // Large File Reader: anything big that comes into the chat from outside is read by Haiku first, and Claude gets
 // short notes and a path to the full thing. Two parts, one switch:

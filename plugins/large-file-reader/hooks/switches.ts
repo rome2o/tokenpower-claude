@@ -1,9 +1,11 @@
 import type { EngineInterface } from 'claude-code'
 import { showPane } from './cards.ts'
-import { NAME, OFF, PANE, PANE_TITLE, PARTS } from './constants.ts'
+import { NAME, PANE, PANE_TITLE, PARTS } from './constants.ts'
 import type { Part } from './constants.ts'
 import { sessionId } from './ledger.ts'
 import { S, chatOff, fullNext, globalOff, hiddenIn } from './state.ts'
+
+const OFF = { plugin: 'large-file-reader', key: 'off' } as const
 
 // The /mods switchboard turns this mod off in every chat with switches.json. Missing means on.
 export async function readSwitch($: EngineInterface) {

@@ -8,9 +8,10 @@ import { agentChars, agentSteps, answers, owned, waiters } from './state.ts'
 import { append, log, logsDir, notesDir } from './io.ts'
 import { relevant, viaConnector, viaFirecrawl, viaWebTools } from './fetch.ts'
 import type { RunView, SourceView } from '../types'
-import { read, update } from 'claude-code'
-import { runsAtom } from './atoms.ts'
+import { atom, read, update } from 'claude-code'
 import { openPane } from './ui.ts'
+
+const runsAtom = atom({ plugin: 'web-research-saver', key: 'runs' } as const, [] as RunView[], { shape: 'runs-2' })
 
 export async function writeUp($: EngineInterface, job: Job, question: string, sources: Source[], notes: string[], today: string, since: string | null) {
   let room = ALL_CHARS

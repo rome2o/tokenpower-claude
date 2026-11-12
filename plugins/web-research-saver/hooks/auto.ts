@@ -1,7 +1,6 @@
 import type { EngineInterface } from 'claude-code'
 import type { AutoView } from '../types'
-import { update } from 'claude-code'
-import { autoAtom, busyAtom } from './atoms.ts'
+import { atom, update } from 'claude-code'
 import { ALL_CHARS, AUTO_MIN_COMMENTARY, AUTO_MS, MAX_AUTO, MODEL, NAME } from './constants.ts'
 import type { CallResult, WebSearchRecord } from './shapes.ts'
 import { countUsage, resultText } from './tools.ts'
@@ -9,6 +8,9 @@ import { clean, commas, dollars, money, oneLine, tokens, urlsIn } from './text.t
 import { append, log, logsDir } from './io.ts'
 import { openPane } from './ui.ts'
 import { SYSTEM } from './prompts.ts'
+
+const autoAtom = atom({ plugin: 'web-research-saver', key: 'auto' } as const, [] as AutoView[], { shape: 'auto-1' })
+const busyAtom = atom({ plugin: 'web-research-saver', key: 'busy' } as const, 0)
 
 export async function addAuto($: EngineInterface, row: AutoView) {
   await update($, autoAtom, list => [row, ...(list ?? [])].slice(0, MAX_AUTO))

@@ -3,15 +3,22 @@ import { S, agentChars, agentSteps, answers, owned, waiters } from './state.ts'
 import { ACCENT, BAD, COMMAND, GOOD, MODEL, NAME, OFF_TEXT, PANE, TITLE, USAGE_TEXT } from './constants.ts'
 import { exists, log } from './io.ts'
 import { closePane, openPane } from './ui.ts'
-import { read, update } from 'claude-code'
-import { autoAtom, busyAtom, foundAtom, offAtom, openAtom, routerAtom, runsAtom } from './atoms.ts'
+import { atom, read, update } from 'claude-code'
 import { refreshTools, resultText } from './tools.ts'
 import { startRun } from './research.ts'
 import { shorten } from './auto.ts'
 import type { CallResult, Done } from './shapes.ts'
 import { commas, money, remember, tally } from './text.ts'
 import { explorerSvg } from './mascot.ts'
-import type { RunView } from '../types'
+import type { AutoView, FoundView, RunView } from '../types'
+
+const runsAtom = atom({ plugin: 'web-research-saver', key: 'runs' } as const, [] as RunView[], { shape: 'runs-2' })
+const autoAtom = atom({ plugin: 'web-research-saver', key: 'auto' } as const, [] as AutoView[], { shape: 'auto-1' })
+const foundAtom = atom({ plugin: 'web-research-saver', key: 'found' } as const, null as FoundView | null, { shape: 'found-1' })
+const offAtom = atom({ plugin: 'web-research-saver', key: 'off' } as const, false)
+const routerAtom = atom({ plugin: 'web-research-saver', key: 'router' } as const, false)
+const busyAtom = atom({ plugin: 'web-research-saver', key: 'busy' } as const, 0)
+const openAtom = atom({ plugin: 'web-research-saver', key: 'open' } as const, [] as number[], { shape: 'open-1' })
 
 // The /mods switchboard turns this mod off in every chat with switches.json; Subagent Model Router's switch is read too.
 async function readSwitch($: EngineInterface) {
