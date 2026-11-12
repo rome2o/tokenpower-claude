@@ -20,8 +20,8 @@
     {
       "name": "subagent-model-router",
       "source": "./plugins/subagent-model-router",
-      "description": "Modified copy of an MIT-licensed Jev model router that uses Haiku in place of Jev. Haiku reads each subagent task at agent.spawn and answers in JSON with a tier and a confidence from 0 to 1; a task moves to a cheaper model only when that confidence is at least minDowngradeConfidence. Logs every pick, the model it replaced and the estimated cost difference to ~/.claude/mods-logs/savings.jsonl. No API key and no network call of its own. Never changes the main chat's model; main-chat effort routing is off by default.",
-      "version": "0.6.0"
+      "description": "Modified copy of an MIT-licensed Jev model router that uses Haiku in place of Jev. Haiku reads each subagent task at agent.spawn and answers in JSON with a tier and a confidence from 0 to 1; a task moves to a cheaper model only when that confidence is at least minDowngradeConfidence, and up only at a high bar (minUpgradeConfidence, 0.85); Opus is reached only when allowDeep is on. Logs every pick, the model it replaced and the estimated cost difference to ~/.claude/mods-logs/savings.jsonl. No API key and no network call of its own. Never changes the main chat's model; main-chat effort routing is off by default.",
+      "version": "0.6.1"
     },
     {
       "name": "prompt-cache-timer",

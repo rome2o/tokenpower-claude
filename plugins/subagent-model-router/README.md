@@ -10,7 +10,7 @@ Picks the model each subagent runs on. Before a subagent starts, Haiku reads its
 |---|---|---|
 | `fast` | `claude-haiku-5-5` | Mechanical and local work: read or summarise a file, run one command, rename a symbol. |
 | `balanced` | `claude-sonnet-5-5` | Ordinary engineering: a well-specified change across a few files, tests, a clearly described bug. |
-| `deep` | `claude-opus-5-5` | Hard or high-stakes work: design, unknown failures, security, migrations, concurrency. |
+| `deep` | `claude-opus-5-5` | Open-ended or irreversible work: an unknown cause to find, an open design with no spec, or a task whose own execution is final. A long, well-specified brief is not deep, even when it mentions security, review or design. Off by default, see `allowDeep`. |
 
 The judge call goes through `$.model.complete` with `model: "haiku"`. The mod makes no other network call and needs no API key.
 
@@ -21,9 +21,10 @@ This is a modified copy of an MIT-licensed Jev model router (see `LICENSE`). The
 ## Changes in this copy
 
 - **Haiku is the only judge.** The TypeSafe and Vercel AI Gateway paths are gone: no HTTP calls, no key options, no env reads.
-- **The downgrade bar works.** The old fallback (`$.model.classify`) gave a label with no confidence, so a task never moved down from Opus. Haiku now gives a confidence from 0 to 1. A task moves to a cheaper model only when that confidence is at least `minDowngradeConfidence` (0.6). It moves to a dearer model at `minUpgradeConfidence` (0.3) or more.
+- **The downgrade bar works.** The old fallback (`$.model.classify`) gave a label with no confidence, so a task never moved down from Opus. Haiku now gives a confidence from 0 to 1. A task moves to a cheaper model only when that confidence is at least `minDowngradeConfidence` (0.6). It moves to a dearer model only at `minUpgradeConfidence` (0.85) or more. The router is there to save budget, so the up bar is high: Haiku's confidence is its own estimate, and a wrong move up costs real money (an observed run put three well-specified review briefs on Opus at confidence 0.60, $0.65 to $0.94 more each).
+- **Opus is opt-in.** `allowDeep` defaults to `false`. While it is off, a `deep` answer from a lower tier is capped at Sonnet, and the card and log say so ("Held at Sonnet: deep needs allowDeep"). A task already on Opus is never moved up; only the downgrade rule can move it. For Opus-only-when-asked behaviour, set `allowDeep` to `true`: the deep tier is then reachable at `minUpgradeConfidence`.
 - **Fail-open.** A judge call that errors, runs past `timeoutMs`, or answers with no readable tier keeps the model as it is. A confidence that is not a number from 0 to 1 counts as none: it can never move a task down.
-- **Risk forces the deep tier.** `risky` above 0.7 sends the task to `deep`, whatever the tier said. A task already on the deep tier keeps its exact id (`claude-opus-5-5[1m]` stays as it is).
+- **Risk forces the deep tier, when allowed.** With `allowDeep` true, `risky` above 0.7 sends the task to `deep`, whatever the tier said. With it false, risk raises a task to Sonnet at most and the log line says it was capped. A task already on the deep tier keeps its exact id (`claude-opus-5-5[1m]` stays as it is).
 - **Task text is cut** at 12,000 characters before it goes to the judge, and sits inside `<task>` tags that the judge is told to treat as data.
 - **Tiers are full ids.** `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5`.
 - **Main chat model: never changed.** A model change mid-chat throws the whole prompt cache away.
@@ -42,7 +43,7 @@ This is a modified copy of an MIT-licensed Jev model router (see `LICENSE`). The
 
 Known limit: when the Agent call names no model, the "replaced" model is the parent's. An agent type with its own model in its definition is not seen here, so its saving can be overstated.
 
-Known limit: Haiku's confidence is its own estimate. It is not calibrated. A live test shows whether 0.6 separates easy tasks from the rest.
+Known limit: Haiku's confidence is its own estimate. It is not calibrated, which is why moving up needs 0.85 and the deep tier needs `allowDeep`. Haiku also over-calls `deep` on long briefs that mention security or review; the deep wording now describes missing direction, not subject matter.
 
 ## The pane: Subagent Model Router
 
@@ -51,7 +52,7 @@ On camera the pane is called "Subagent Model Router". The folder, the switch key
 - It opens by itself when Claude starts a subagent. If you close it, it stays closed until you ask for it again.
 - Reopen it with every card from this chat: type `/model-router pane` (or `/model-router`), or press Open in `/mods`.
 - `"subagent-model-router:hidden": true` in switches.json (the Shown/Hidden button in `/mods`) stops it opening by itself. The routing goes on.
-- One card for each subagent: the task, Haiku's tier and confidence, the model it ran on, the model it would have run on, and one plain sentence on why. Kept models get a card too, for example "Kept Opus: confidence 0.45 under the 0.6 bar."
+- One card for each subagent: the task, Haiku's tier and confidence, the model it ran on, the model it would have run on, and one plain sentence on why. Kept models get a card too, for example "Kept Opus: confidence 0.45 under the 0.6 bar" or "Held at Sonnet: deep needs allowDeep".
 - When the run ends, the card shows the dollars saved (or the extra cost).
 - "Details" opens a card: Haiku's whole answer, the time it took, the rule, the risk score, the list prices, the task and the detail file, with a button to open it.
 - Tiles on top: subagents, how many moved, dollars saved.
@@ -79,8 +80,9 @@ general-purpose: kept claude-opus-5-5: kept claude-opus-5-5, wanted claude-haiku
 fastModel:              string  default claude-haiku-5-5
 balancedModel:          string  default claude-sonnet-5-5
 deepModel:              string  default claude-opus-5-5
-minUpgradeConfidence:   number  default 0.3
+minUpgradeConfidence:   number  default 0.85
 minDowngradeConfidence: number  default 0.6
+allowDeep:              boolean default false (true lets a task move up to the deep tier)
 routeSubagentModel:     boolean default true
 routeMainEffort:        boolean default false
 timeoutMs:              number  default 8000 (Haiku takes about 1.3 s)
@@ -95,4 +97,5 @@ The subagent's prompt (cut to 12,000 characters), its description and its agent 
 
 ```
 claude plugin test ~/.claude/mods/model-router
+node --test plugins/subagent-model-router/tests/*.test.mjs   # policy logic, no install (Node 22.18+)
 ```
