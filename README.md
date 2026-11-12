@@ -1,5 +1,7 @@
 # Tokenpower for Claude: token-saving mods and plugin marketplace for Claude Code and Claude desktop
 
+<p align="center"><img src="assets/hero.png" alt="Tokenpower for Claude, token-saving mods for Claude Code and Claude desktop" width="100%"></p>
+
 Tokenpower is a plugin marketplace for Claude Code and Claude desktop with thirteen mods that cut token usage and cost, and show where your tokens go. Cheaper models read big files, web pages and screenshots first, subagents move to lower tiers, and panes total your savings. Each mod switches on or off on its own.
 
 Requires Claude 2.1.287 or newer (terminal), or 2.1.286 or newer (desktop app). macOS is the tested platform.
@@ -19,6 +21,8 @@ In Claude:
 Type `/mods` to see every mod and switch each on or off. Type `/savings` for the totals. The other mods install the same way, for example `/plugin install web-research-saver@tokenpower-claude`.
 
 ## The thirteen mods
+
+<p align="center"><img src="assets/mods.png" alt="The thirteen mods, grouped by whether they save tokens or show where they go" width="100%"></p>
 
 | Mod | What it does |
 |---|---|
