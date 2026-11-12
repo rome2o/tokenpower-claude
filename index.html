@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokenpower for Claude: token-saving mods for Claude Code</title>
+<meta name="description" content="Thirteen mods for Claude that cut token cost or show where tokens go. Cheaper models read big files and web pages first, and a pane totals what you saved. MIT licence, macOS.">
+<link rel="canonical" href="https://rome2o.github.io/tokenpower-claude/">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Tokenpower for Claude: token-saving mods for Claude Code">
+<meta property="og:description" content="Thirteen mods for Claude that cut token cost or show where tokens go. Cheaper models read big files and web pages first, and a pane totals what you saved.">
+<meta property="og:url" content="https://rome2o.github.io/tokenpower-claude/">
+<meta property="og:image" content="https://rome2o.github.io/tokenpower-claude/og.png">
+<meta property="og:image:alt" content="Tokenpower for Claude, token-saving mods for Claude Code, install command shown as text.">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:site_name" content="Tokenpower for Claude">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tokenpower for Claude: token-saving mods for Claude Code">
+<meta name="twitter:description" content="Thirteen mods for Claude that cut token cost or show where tokens go. Cheaper models read big files and web pages first, and a pane totals what you saved.">
+<meta name="twitter:image" content="https://rome2o.github.io/tokenpower-claude/og.png">
+<meta name="twitter:image:alt" content="Tokenpower for Claude, token-saving mods for Claude Code, install command shown as text.">
+<link rel="preload" href="fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/ibm-plex-sans-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "Tokenpower for Claude",
+  "url": "https://rome2o.github.io/tokenpower-claude/",
+  "programmingLanguage": "TypeScript",
+  "description": "A Claude plugin marketplace with thirteen mods that cut token cost or show where tokens go.",
+  "codeRepository": "https://github.com/rome2o/tokenpower-claude",
+  "license": "https://opensource.org/licenses/MIT",
+  "author": {
+    "@type": "Person",
+    "name": "Kazim Ali"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What does Tokenpower for Claude do?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It is a marketplace of thirteen Claude mods. Bulky reading goes to a cheaper model first, simple subagent work moves down a tier, panes show where tokens go, and a pane counts the tokens saved."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I install it?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Inside Claude, run /plugin marketplace add rome2o/tokenpower-claude. Then run /plugin install <mod-id>@tokenpower-claude once for each mod you want, for example large-file-reader, and finish with /reload-plugins."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I switch a mod off?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Type /mods to see every mod and switch each one on or off. The other mods keep running."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How many tokens will it save?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "That is not measured yet. The mods were built and installed on one Mac and have not been measured in daily use. Type /savings to see totals from your own sessions. Each row is marked REAL or ESTIMATED."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it work on Windows or Linux?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "macOS is the tested platform. The screenshot compressor relies on sips, which ships with macOS."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What does it read or write on my machine?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Shared state lives under ~/.claude/mods, ~/.claude/mods-logs and ~/.claude/handoffs. The context handoff reads the chat transcript to write its summary, and the web research saver fetches public URLs found in search results. The four newest mods make no network calls, and compaction-pruner is off by default."
+      }
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="mark" href="#top">Tokenpower<span class="hide-xs"> for Claude</span></a>
+    <a class="cta" href="https://github.com/rome2o/tokenpower-claude">GitHub</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="masthead wrap" id="top" aria-labelledby="h-title">
+    <h1 id="h-title">Token-saving mods for Claude</h1>
+    <p class="lede">Tokenpower is a marketplace of thirteen Claude mods. They send bulky reading to a cheaper model, move simple subagent work down a tier, and count the tokens saved.</p>
+
+    <div class="install" id="install">
+      <div class="step">
+        <h2 class="step-label">1. Add the marketplace</h2>
+        <div class="cmd">
+          <pre id="cmd-add">/plugin marketplace add <span class="nb">rome2o/tokenpower-claude</span></pre>
+          <button class="copy" type="button" data-copy="cmd-add" data-label="Copy" aria-label="Copy the add marketplace command" hidden>Copy</button>
+        </div>
+      </div>
+      <div class="step">
+        <h2 class="step-label">2. Install three starter mods</h2>
+        <p class="after step-note">Run each line as its own command, in this order.</p>
+        <div class="cmd">
+          <pre id="cmd-i1">/plugin install <span class="nb">large-file-reader@</span><wbr><span class="nb">tokenpower-claude</span></pre>
+          <button class="copy" type="button" data-copy="cmd-i1" data-label="Copy" aria-label="Copy the large-file-reader install command" hidden>Copy</button>
+        </div>
+        <div class="cmd">
+          <pre id="cmd-i2">/plugin install <span class="nb">token-savings-tracker@</span><wbr><span class="nb">tokenpower-claude</span></pre>
+          <button class="copy" type="button" data-copy="cmd-i2" data-label="Copy" aria-label="Copy the token-savings-tracker install command" hidden>Copy</button>
+        </div>
+        <div class="cmd">
+          <pre id="cmd-i3">/plugin install <span class="nb">mods-manager@</span><wbr><span class="nb">tokenpower-claude</span></pre>
+          <button class="copy" type="button" data-copy="cmd-i3" data-label="Copy" aria-label="Copy the mods-manager install command" hidden>Copy</button>
+        </div>
+        <div class="cmd">
+          <pre id="cmd-reload">/reload-plugins</pre>
+          <button class="copy" type="button" data-copy="cmd-reload" data-label="Copy" aria-label="Copy the reload command" hidden>Copy</button>
+        </div>
+      </div>
+      <p class="after">Run these inside Claude. Then type <code>/mods</code> to switch each mod on or off, and <code>/savings</code> for the totals.</p>
+      <a class="repo-link" href="https://github.com/rome2o/tokenpower-claude">View the repository on GitHub</a>
+      <span class="sr" id="copy-status" role="status" aria-live="polite"></span>
+    </div>
+
+    <dl class="plate">
+      <div><dt>Installs from</dt><dd>main</dd></div>
+      <div><dt>Mods</dt><dd>13</dd></div>
+      <div><dt>Licence</dt><dd>MIT</dd></div>
+      <div><dt>Platform</dt><dd>macOS</dd></div>
+      <div><dt>Author</dt><dd>Kazim Ali</dd></div>
+    </dl>
+  </section>
+
+  <section class="sec" id="mods" aria-labelledby="h-mods">
+    <div class="wrap">
+      <h2 id="h-mods">The thirteen mods</h2>
+      <p class="intro">Each mod switches on or off on its own. Install any of them with <code>/plugin install <span class="nb">&lt;mod-id&gt;@</span><wbr><span class="nb">tokenpower-claude</span></code>.</p>
+      <table class="tbl" role="table">
+        <caption>Mods in the tokenpower-claude marketplace on the main branch. The last four are new and not yet run in a live Claude session</caption>
+        <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Mod</th><th scope="col" role="columnheader">What it does</th></tr></thead>
+        <tbody role="rowgroup">
+          <tr role="row"><th scope="row" role="rowheader">large-file-reader</th><td role="cell">Hands big files and connector results to Haiku first. Claude sees brief notes, plus a path to open the full version when it needs it.</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">effort-level-switcher</th><td role="cell">Reads each prompt, suggests the effort level it calls for, and switches when you agree, or by itself in auto mode.</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">subagent-model-router</th><td role="cell">Haiku rates each subagent task. A task runs on a cheaper model only when that rating is confident. The main chat keeps its model.</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">prompt-cache-timer</th><td role="cell">Counts down until the prompt cache goes cold. Can ping it to keep it warm.</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">context-handoff</th><td role="cell">When a chat reaches 250k tokens, offers to write a handoff of the whole chat and open a new chat from it.</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">web-research-saver</th><td role="cell">Moves web research out of the main chat. A cheap worker reads the pages and sends back a short brief with its sources.</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">browser-screenshot-compressor</th><td role="cell">Makes each browser screenshot smaller, or swaps it for a short Haiku description in words.</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">mods-manager</th><td role="cell">Opens the <code>/mods</code> pane, which lists every mod on this Mac and turns each one on or off.</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">token-savings-tracker</th><td role="cell">Opens the <code>/savings</code> pane with the tokens the other mods saved, for today and for this chat.</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">mcp-schema-auditor</th><td role="cell">New, not yet measured in daily use, not run live. The <code>/mcp-cost</code> pane ranks your MCP servers by the tokens their tool definitions add to every request, and suggests which to disable. Estimates only. It never changes your config.</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">context-bloat-auditor</th><td role="cell">New, not yet measured in daily use, not run live. The <code>/context-audit</code> pane lists the always-loaded items that cost the most tokens and flags big or duplicated ones. Read-only.</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">context-meter</th><td role="cell">New, not yet measured in daily use, not run live. The <code>/context-meter</code> band above the prompt shows context by category, distance to compaction, the session cost as Claude reports it, and today's tokens saved.</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">compaction-pruner</th><td role="cell">New, not yet measured in daily use, not run live. Off by default. At compaction it shortens old large tool results and keeps the originals in a folder you can open. It starts in dry run mode and deletes nothing.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="how" aria-labelledby="h-how">
+    <div class="wrap">
+      <h2 id="h-how">How it saves tokens</h2>
+      <div class="how-grid">
+      <div class="mech">
+        <ul>
+          <li>
+            <h3>Read with a cheap model first</h3>
+            <p>Claude gets short notes, not the full input.</p>
+            <p class="mods">large-file-reader, web-research-saver, browser-screenshot-compressor</p>
+          </li>
+          <li>
+            <h3>Right-size the model and effort</h3>
+            <p>Each task gets the cheapest tier that can do it.</p>
+            <p class="mods">subagent-model-router, effort-level-switcher</p>
+          </li>
+          <li>
+            <h3>Watch the cache and the context</h3>
+            <p>Avoid paying to rebuild a cold or oversized chat, and see what fills the window.</p>
+            <p class="mods">prompt-cache-timer, context-handoff, context-meter, context-bloat-auditor, mcp-schema-auditor, compaction-pruner</p>
+          </li>
+        </ul>
+      </div>
+      <figure class="diagram">
+        <svg class="wide" viewBox="0 0 1000 320" role="img" aria-labelledby="dw-t"><title id="dw-t">Three paths. A large input is read by a cheap model, and Claude gets short notes and a path. A subagent task or prompt goes to the cheapest tier that can do it. A growing or idle chat gets a cache countdown and a handoff at 250k tokens, then a fresh chat.</title>
+<rect class="d-out" x="0" y="10" width="290" height="70"/>
+<text class="d-text" x="16" y="40">Large file, web page</text>
+<text class="d-text" x="16" y="62">or screenshot</text>
+<rect class="d-box" x="355" y="10" width="290" height="70"/>
+<text class="d-text" x="371" y="40">A cheap model (Haiku)</text>
+<text class="d-text" x="371" y="62">reads or shrinks it</text>
+<rect class="d-out" x="710" y="10" width="290" height="70"/>
+<text class="d-text" x="726" y="40">Claude gets short notes</text>
+<text class="d-text" x="726" y="62">and a path to the full result</text>
+<path class="d-line" d="M290,45 H347"/>
+<path class="d-head" d="M347,40 L355,45 L347,50 Z"/>
+<path class="d-line" d="M645,45 H702"/>
+<path class="d-head" d="M702,40 L710,45 L702,50 Z"/>
+<rect class="d-out" x="0" y="125" width="290" height="70"/>
+<text class="d-text" x="16" y="155">Subagent task</text>
+<text class="d-text" x="16" y="177">or prompt</text>
+<rect class="d-box" x="355" y="125" width="290" height="70"/>
+<text class="d-text" x="371" y="155">Sent to the cheapest</text>
+<text class="d-text" x="371" y="177">tier that can do it</text>
+<rect class="d-out" x="710" y="125" width="290" height="70"/>
+<text class="d-text" x="726" y="155">Runs on a cheaper model</text>
+<text class="d-text" x="726" y="177">or the effort it needs</text>
+<path class="d-line" d="M290,160 H347"/>
+<path class="d-head" d="M347,155 L355,160 L347,165 Z"/>
+<path class="d-line" d="M645,160 H702"/>
+<path class="d-head" d="M702,155 L710,160 L702,165 Z"/>
+<rect class="d-out" x="0" y="240" width="290" height="70"/>
+<text class="d-text" x="16" y="270">Chat goes idle</text>
+<text class="d-text" x="16" y="292">or grows large</text>
+<rect class="d-box" x="355" y="240" width="290" height="70"/>
+<text class="d-text" x="371" y="270">Cache countdown,</text>
+<text class="d-text" x="371" y="292">handoff at 250k tokens</text>
+<rect class="d-out" x="710" y="240" width="290" height="70"/>
+<text class="d-text" x="726" y="270">A fresh chat starts</text>
+<text class="d-text" x="726" y="292">from a written handoff</text>
+<path class="d-line" d="M290,275 H347"/>
+<path class="d-head" d="M347,270 L355,275 L347,280 Z"/>
+<path class="d-line" d="M645,275 H702"/>
+<path class="d-head" d="M702,270 L710,275 L702,280 Z"/>
+        </svg>
+        <svg class="narrow" viewBox="0 0 340 528" role="img" aria-labelledby="dn-t"><title id="dn-t">Three paths. A large input is read by a cheap model, and Claude gets short notes and a path. A subagent task or prompt goes to the cheapest tier that can do it. A growing or idle chat gets a cache countdown and a handoff at 250k tokens, then a fresh chat.</title>
+<rect class="d-out" x="1" y="2" width="338" height="58"/>
+<text class="d-text" x="16" y="26">Large file, web page</text>
+<text class="d-text" x="16" y="46">or screenshot</text>
+<path class="d-line" d="M24,60 V92"/>
+<path class="d-head" d="M19,90 L24,98 L29,90 Z"/>
+<text class="d-text" x="40" y="84">Haiku reads or shrinks it</text>
+<rect class="d-out" x="1" y="98" width="338" height="58"/>
+<text class="d-text" x="16" y="122">Claude gets short notes</text>
+<text class="d-text" x="16" y="142">and a path to the full result</text>
+<rect class="d-out" x="1" y="186" width="338" height="58"/>
+<text class="d-text" x="16" y="210">Subagent task</text>
+<text class="d-text" x="16" y="230">or prompt</text>
+<path class="d-line" d="M24,244 V276"/>
+<path class="d-head" d="M19,274 L24,282 L29,274 Z"/>
+<text class="d-text" x="40" y="268">Cheapest tier that can do it</text>
+<rect class="d-out" x="1" y="282" width="338" height="58"/>
+<text class="d-text" x="16" y="306">Runs on a cheaper model</text>
+<text class="d-text" x="16" y="326">or the effort it needs</text>
+<rect class="d-out" x="1" y="370" width="338" height="58"/>
+<text class="d-text" x="16" y="394">Chat goes idle</text>
+<text class="d-text" x="16" y="414">or grows large</text>
+<path class="d-line" d="M24,428 V460"/>
+<path class="d-head" d="M19,458 L24,466 L29,458 Z"/>
+<text class="d-text" x="40" y="452">Cache countdown, handoff at 250k</text>
+<rect class="d-out" x="1" y="466" width="338" height="58"/>
+<text class="d-text" x="16" y="490">A fresh chat starts</text>
+<text class="d-text" x="16" y="510">from a written handoff</text>
+        </svg>
+        <figcaption>The three mechanisms, one path each.</figcaption>
+      </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="touches" aria-labelledby="h-touch">
+    <div class="wrap">
+      <h2 id="h-touch">What it touches</h2>
+      <ul class="list">
+        <li>All shared state is kept in <code>~/.claude/mods</code>, <code>~/.claude/mods-logs</code> and <code>~/.claude/handoffs</code>.</li>
+        <li>Each mod switches off in <code>/mods</code> without stopping the others.</li>
+        <li>The web research saver fetches only public URLs from search results and skips local and private addresses. Fetched text is handled as untrusted data.</li>
+        <li>The large file reader acts on a Read or a shell read of a file over about 2,000 tokens, and on connector results over about 4,000 tokens. It has Haiku, a cheaper model, read that content, and it keeps its notes and the full output on disk. It opens saved tool outputs only from <code>~/.claude/projects/</code>.</li>
+        <li>The context handoff reads the chat transcript so it can write the summary.</li>
+        <li>The four newest mods make no network calls. mcp-schema-auditor, context-bloat-auditor and context-meter read the sizes Claude reports and the <code>/mods</code> switch file, and write only their own log under <code>~/.claude/mods-logs/</code>. context-meter also reads the savings ledger and never writes it. context-bloat-auditor never reads your file contents and hides credential-like file names.</li>
+        <li>compaction-pruner is off by default, deletes nothing and makes no model calls. Before it shortens a tool result it saves the full text, with API keys, tokens and private key blocks masked, under <code>~/.claude/mods-logs/compaction-pruner/</code>. Treat that folder as sensitive.</li>
+      </ul>
+      <h3>Known limits</h3>
+      <ul class="list">
+        <li>The web research saver does not follow redirect chains or resolve DNS itself. A public URL that redirects to an internal address is not blocked.</li>
+        <li>The large file reader checks the path text only, so a symlink placed inside its tool-results folder is not detected.</li>
+        <li>Fetched web text reaches Claude fenced and labelled as untrusted data. This lowers prompt-injection risk but does not remove it.</li>
+        <li>compaction-pruner masks secrets by pattern matching, so a secret in an unusual format can be saved as it is, and a masked value cannot be recovered from the saved copy. context-bloat-auditor recognises credential-like files by name, so an unusual name for a secret file can still be shown.</li>
+      </ul>
+      <p>Report a vulnerability through GitHub private vulnerability reporting on the repository. See <a href="https://github.com/rome2o/tokenpower-claude/blob/main/SECURITY.md">SECURITY.md</a>, which covers all thirteen mods.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="status" aria-labelledby="h-status">
+    <div class="wrap">
+      <h2 id="h-status">Status</h2>
+      <p class="status-line">Built and installed on one Mac, not yet measured in daily use.</p>
+      <p>The <code>/savings</code> pane totals what the other mods report, and marks each row REAL or ESTIMATED.</p>
+      <div class="review">
+        <span class="tag">New, not yet run live</span>
+        <h3>Four newer mods</h3>
+        <p>mcp-schema-auditor, context-bloat-auditor, context-meter and compaction-pruner are listed in the marketplace that step 1 adds. They are type-checked and unit-checked, but they are new, not yet measured in daily use and not yet run in a live Claude session. They make no savings claims. compaction-pruner is off by default, and <code>/savings</code> does not count it.</p>
+        <p>Four details still need a live check: whether token figures include MCP server instructions, how hex colours render, how bands stack, and which unit the percentage uses.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="requirements" aria-labelledby="h-req">
+    <div class="wrap">
+      <h2 id="h-req">Requirements</h2>
+      <dl class="req">
+        <div><dt>Claude, terminal</dt><dd>2.1.287 or newer</dd></div>
+        <div><dt>Claude, desktop app</dt><dd>2.1.286 or newer</dd></div>
+        <div><dt>Platform</dt><dd>macOS is the tested platform</dd></div>
+        <div><dt>Optional: PDFs</dt><dd><code>brew install poppler</code> lets the large file reader read PDFs.</dd></div>
+        <div><dt>Optional: web scraping</dt><dd>The Firecrawl command-line tool (npm) lets the web research saver scrape pages.</dd></div>
+        <div><dt>Optional: screenshots</dt><dd>The screenshot compressor uses <code>sips</code>, which ships with macOS.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sec faq" id="faq" aria-labelledby="h-faq">
+    <div class="wrap">
+      <h2 id="h-faq">Questions</h2>
+      <details>
+        <summary>What does Tokenpower for Claude do?</summary>
+        <p>It is a marketplace of thirteen Claude mods. Bulky reading goes to a cheaper model first, simple subagent work moves down a tier, panes show where tokens go, and a pane counts the tokens saved.</p>
+      </details>
+      <details>
+        <summary>How do I install it?</summary>
+        <p>Inside Claude, run /plugin marketplace add rome2o/tokenpower-claude. Then run /plugin install &lt;mod-id&gt;@tokenpower-claude once for each mod you want, for example large-file-reader, and finish with /reload-plugins.</p>
+      </details>
+      <details>
+        <summary>Can I switch a mod off?</summary>
+        <p>Yes. Type /mods to see every mod and switch each one on or off. The other mods keep running.</p>
+      </details>
+      <details>
+        <summary>How many tokens will it save?</summary>
+        <p>That is not measured yet. The mods were built and installed on one Mac and have not been measured in daily use. Type /savings to see totals from your own sessions. Each row is marked REAL or ESTIMATED.</p>
+      </details>
+      <details>
+        <summary>Does it work on Windows or Linux?</summary>
+        <p>macOS is the tested platform. The screenshot compressor relies on sips, which ships with macOS.</p>
+      </details>
+      <details>
+        <summary>What does it read or write on my machine?</summary>
+        <p>Shared state lives under ~/.claude/mods, ~/.claude/mods-logs and ~/.claude/handoffs. The context handoff reads the chat transcript to write its summary, and the web research saver fetches public URLs found in search results. The four newest mods make no network calls, and compaction-pruner is off by default.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p>Built by Kazim Ali. MIT licence.</p>
+    <a href="https://github.com/rome2o/tokenpower-claude">Repository</a>
+    <a href="https://github.com/rome2o/tokenpower-claude/issues">Issues</a>
+    <a href="https://github.com/rome2o/tokenpower-claude/blob/main/LICENSE">Licence</a>
+    <a href="https://github.com/rome2o/tokenpower-claude/blob/main/SECURITY.md">Security</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var s=document.getElementById('copy-status');
+  document.querySelectorAll('.copy').forEach(function(b){
+    b.hidden=false;
+    b.addEventListener('click',function(){
+      var el=document.getElementById(b.dataset.copy),t=el.textContent.trim();
+      function done(ok){
+        clearTimeout(b._t);
+        b.textContent=ok?'Copied':'Text selected, copy it';
+        b.dataset.state=ok?'done':'fail';
+        if(s){s.textContent='';setTimeout(function(){s.textContent=ok?'Copied to clipboard':'Copy failed, text is selected';},50);}
+        if(!ok){var r=document.createRange();r.selectNodeContents(el);var g=getSelection();g.removeAllRanges();g.addRange(r);}
+        b._t=setTimeout(function(){b.textContent=b.dataset.label;delete b.dataset.state;if(s)s.textContent='';},2000);
+      }
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){done(1)},function(){done(0)});}
+      else done(0);
+    });
+  });
+})();
+</script>
+</body>
+</html>
