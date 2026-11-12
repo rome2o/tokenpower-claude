@@ -1,6 +1,6 @@
-# Tokenpower for Claude: token-saving mods and plugin marketplace
+# Tokenpower for Claude: token-saving mods and plugin marketplace for Claude Code
 
-Tokenpower is a Claude plugin marketplace with thirteen mods that cut token usage and cost, and show where your tokens go. Cheaper models read big files, web pages and screenshots first, subagents move to lower tiers, and panes total your savings. Each mod switches on or off on its own.
+Tokenpower is a Claude Code plugin marketplace with thirteen mods that cut token usage and cost, and show where your tokens go. Cheaper models read big files, web pages and screenshots first, subagents move to lower tiers, and panes total your savings. Each mod switches on or off on its own.
 
 Requires Claude 2.1.287 or newer (terminal), or 2.1.286 or newer (desktop app). macOS is the tested platform.
 
