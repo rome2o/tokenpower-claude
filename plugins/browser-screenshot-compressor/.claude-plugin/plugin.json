@@ -1,0 +1,10 @@
+{
+  "name": "browser-screenshot-compressor",
+  "version": "0.2.0",
+  "description": "Cheaper browser tasks: shrinks every screenshot Claude takes while it drives a browser, or has Haiku describe it in words. /efficient-browser full lets one full-size screenshot through",
+  "author": {
+    "name": "Kazim Ali",
+    "url": "https://github.com/rome2o"
+  },
+  "types": "./types/index.d.ts"
+}

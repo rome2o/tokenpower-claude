@@ -1,0 +1,10 @@
+{
+  "name": "effort-level-switcher",
+  "version": "0.1.0",
+  "description": "Reads each prompt, picks the effort level it needs with a four-question framework, and offers Switch to that level, or sets it by itself in auto mode",
+  "author": {
+    "name": "Kazim Ali",
+    "url": "https://github.com/rome2o"
+  },
+  "types": "./types/index.d.ts"
+}

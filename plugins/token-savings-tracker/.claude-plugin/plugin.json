@@ -1,0 +1,9 @@
+{
+  "name": "token-savings-tracker",
+  "version": "0.2.0",
+  "description": "/savings opens the Token Savings Tracker pane: every token the other mods saved, with today's and this chat's totals",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Kazim Ali"
+  }
+}
