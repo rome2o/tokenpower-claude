@@ -1,9 +1,11 @@
 import type { EngineInterface } from 'claude-code'
 import type { Card } from '../types'
-import { CARDS, CARDS_ALL, CARDS_MAX, CARD_NOTES_MAX, PANE, PANE_TITLE } from './constants.ts'
+import { CARDS_ALL, CARDS_MAX, CARD_NOTES_MAX, PANE, PANE_TITLE } from './constants.ts'
 import { log, sessionId } from './ledger.ts'
 import { S, hiddenIn } from './state.ts'
 import type { Call } from './state.ts'
+
+const CARDS = { plugin: 'large-file-reader', key: 'cards' } as const
 
 // ---------- the pane's cards ----------
 // None of these throw: a pane error after a tool has run must never send the call down again (the .catch would).

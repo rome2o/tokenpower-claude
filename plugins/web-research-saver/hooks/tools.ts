@@ -5,9 +5,11 @@ import { exists, log, withTimeout } from './io.ts'
 import { ACTION, MAX_PARTS, MAX_QUERIES, MIN_PARTS, MODEL, NAME, PLAN_MS, TOOL_MS, WEBBY } from './constants.ts'
 import { oneLine, shortName, urlsIn } from './text.ts'
 import type { AgentView, FoundView, RunView, ToolUse } from '../types'
-import { update } from 'claude-code'
-import { foundAtom, runsAtom } from './atoms.ts'
+import { atom, update } from 'claude-code'
 import { SYSTEM } from './prompts.ts'
+
+const foundAtom = atom({ plugin: 'web-research-saver', key: 'found' } as const, null as FoundView | null, { shape: 'found-1' })
+const runsAtom = atom({ plugin: 'web-research-saver', key: 'runs' } as const, [] as RunView[], { shape: 'runs-2' })
 
 // The desktop app's process may not have nvm on its PATH, so look in the usual places by hand.
 export async function findFirecrawl($: EngineInterface): Promise<Firecrawl | null> {

@@ -87,9 +87,6 @@ export const NOTE_MAX = 12_000
 // ---------- pane ----------
 export const PANE = 'haiku'
 export const PANE_TITLE = 'Haiku hand-offs'
-export const CARDS = { plugin: 'large-file-reader', key: 'cards' } as const
-export const OPEN = { plugin: 'large-file-reader', key: 'open' } as const
-export const OFF = { plugin: 'large-file-reader', key: 'off' } as const
 export const CARDS_MAX = 30
 export const CARDS_ALL = 150
 // Notes kept per card, and drawn when one is open (one drawing draws at most 100,000 characters).
