@@ -1,30 +1,24 @@
-# Tokenpower for Claude
+# Tokenpower for Claude: token-saving mods and plugin marketplace
 
-Nine mods for Claude that cut token cost, plus a switchboard to turn each one on or off and a pane that totals what they saved.
+Tokenpower is a Claude plugin marketplace with nine mods that cut token cost: cheaper models read big files, web pages and screenshots first, subagents move to lower tiers, and a pane totals what you saved. Each mod switches on or off on its own.
 
 Requires Claude 2.1.287 or newer (terminal), or 2.1.286 or newer (desktop app). macOS is the tested platform.
 
-## Install
+## Quickstart
 
 In Claude:
 
 ```
 /plugin marketplace add rome2o/tokenpower-claude
 /plugin install large-file-reader@tokenpower-claude
-/plugin install effort-level-switcher@tokenpower-claude
-/plugin install subagent-model-router@tokenpower-claude
-/plugin install prompt-cache-timer@tokenpower-claude
-/plugin install context-handoff@tokenpower-claude
-/plugin install web-research-saver@tokenpower-claude
-/plugin install browser-screenshot-compressor@tokenpower-claude
-/plugin install mods-manager@tokenpower-claude
 /plugin install token-savings-tracker@tokenpower-claude
+/plugin install mods-manager@tokenpower-claude
 /reload-plugins
 ```
 
-Type `/mods` to see every mod and switch each on or off. Type `/savings` for the totals.
+Type `/mods` to see every mod and switch each on or off. Type `/savings` for the totals. The other six mods install the same way, for example `/plugin install web-research-saver@tokenpower-claude`.
 
-## The mods
+## The nine mods
 
 | Mod | What it does |
 |---|---|
@@ -38,6 +32,12 @@ Type `/mods` to see every mod and switch each on or off. Type `/savings` for the
 | mods-manager | The `/mods` pane. Finds every mod on the machine and switches each on or off. |
 | token-savings-tracker | The `/savings` pane. Totals the tokens the other mods saved. |
 
+## How it saves tokens
+
+- **Progressive disclosure.** A cheap model reads the large input and hands Claude short notes plus a path to the full result, so the full text is read only when needed.
+- **Right-sized models and effort.** Subagent tasks and prompts go to the cheapest tier that can do them.
+- **Cache and context awareness.** The cache timer and context handoff avoid paying to rebuild a cold or oversized chat.
+
 ## Optional tools
 
 - `brew install poppler` lets the large file reader read PDFs.
@@ -46,8 +46,10 @@ Type `/mods` to see every mod and switch each on or off. Type `/savings` for the
 
 ## What they touch
 
-The mods keep shared state under `~/.claude/mods`, `~/.claude/mods-logs` and `~/.claude/handoffs`. Turning a mod off in `/mods` leaves the others running. The web research saver can fetch URLs found in search results, and the context handoff reads the chat transcript to write its summary.
+The mods keep shared state under `~/.claude/mods`, `~/.claude/mods-logs` and `~/.claude/handoffs`. Turning a mod off in `/mods` leaves the others running. The web research saver fetches public URLs found in search results and skips local and private addresses. It treats fetched text as untrusted data. The large file reader only opens saved outputs under `~/.claude/projects/`. The context handoff reads the chat transcript to write its summary. See `SECURITY.md`.
 
-## License
+## Contributing and license
 
-MIT, see `LICENSE`.
+Built and maintained by Kazim Ali. Issues and pull requests are welcome, see `CONTRIBUTING.md`.
+
+MIT, see `LICENSE`. The subagent-model-router plugin is derived from an MIT-licensed model router and keeps that notice in `plugins/subagent-model-router/LICENSE`.
