@@ -7,8 +7,9 @@
  *
  * The judge is Haiku through `$.model.complete`. It answers with one JSON
  * object: a tier, its own confidence in that tier from 0 to 1, an effort
- * score and a risk. The confidence is what the downgrade bar reads. It is the
- * model's own estimate, not a calibrated probability.
+ * score and a risk. The confidence is what the upgrade and downgrade bars
+ * read. It is the model's own estimate, not a calibrated probability, which is
+ * why the upgrade bar is high and the deep tier is off unless `allowDeep`.
  */
 
 export type Tier = 'fast' | 'balanced' | 'deep'
@@ -46,7 +47,7 @@ const TIER_CRITERIA: Record<Tier, string> = {
   fast: 'Mechanical and local: read or summarise a file, run one command, rename a symbol, answer something already in context.',
   balanced:
     'Ordinary engineering: implement a well-specified change across a few files, write tests, fix a clearly described bug, review a small diff.',
-  deep: 'Hard or high-stakes: architecture and design, debugging a failure whose cause is unknown, security, data migrations, concurrency, anything touching production or money.',
+  deep: 'Open-ended or irreversible: the cause of a failure is unknown and has to be found, or the design is open with no spec to follow, or carrying out the task itself would be final or high-stakes. A long, well-specified brief (clear steps, named files, listed findings to fix) is NOT deep, even when it mentions security, review, accessibility or design: the subject does not make a task hard, missing direction does.',
 }
 
 const EFFORT_RUBRIC = ['almost none', 'some', 'a lot', 'as much as possible'] as const
@@ -226,7 +227,8 @@ export interface PolicyConfig {
   tiers: Tiers
   /**
    * How sure the decision must be to spend more (a bigger model, more
-   * reasoning). Being wrong here costs money, so the bar is low.
+   * reasoning). Being wrong here costs money, and the judge's confidence is
+   * uncalibrated, so the bar is high.
    */
   minUpgradeConfidence: number
   /**
@@ -234,6 +236,12 @@ export interface PolicyConfig {
    * by too small a model or too little thought, so the bar is high.
    */
   minDowngradeConfidence: number
+  /**
+   * Whether the deep tier may be chosen from a lower one. When false, a deep
+   * answer (or risk forcing deep) is capped at balanced. A task already on the
+   * deep tier is not affected: only the downgrade rules move it.
+   */
+  allowDeep: boolean
 }
 
 export interface Routing {
@@ -243,15 +251,32 @@ export interface Routing {
   effort: Effort | null
   /** Why, for the log line. */
   reason: string
+  /** True when the judge or the risk rule wanted deep and allowDeep held it at balanced. */
+  capped?: boolean
 }
+
+/** The shipped bars and deep switch; model-router.ts falls back to these. */
+export const DEFAULT_BARS = { minUpgradeConfidence: 0.85, minDowngradeConfidence: 0.6, allowDeep: false } as const
 
 const NOTHING: Routing = { model: null, effort: null, reason: 'no decision' }
 
 /**
+ * Whether the deep tier was wanted (by tier or by the risk rule) but is held
+ * back: allowDeep is off and the task is not already on the deep tier.
+ */
+export function deepHeld(decision: Decision, currentTier: number | null, config: PolicyConfig): boolean {
+  if (config.allowDeep) return false
+  const wantsDeep = decision.tier === 'deep' || (decision.risky !== null && decision.risky > 0.7)
+  return wantsDeep && currentTier !== TIER_ORDER.indexOf('deep')
+}
+
+/**
  * Whether a change of rank passes its threshold. Both directions are allowed;
  * they just do not have to clear the same bar, because the two mistakes do not
- * cost the same. A move whose direction cannot be told (an unrecognised
- * current value) is treated as an upgrade.
+ * cost the same: a wrong upgrade costs money (the judge's confidence is
+ * uncalibrated, so that bar is high), a wrong downgrade costs quality. A move
+ * whose direction cannot be told (an unrecognised current value) is treated as
+ * an upgrade.
  */
 function allowed(
   wanted: number,
@@ -282,6 +307,8 @@ export function route(
   let tier = decision.tier
   let effortScore = decision.effort
   let forced = false
+  const currentTier = rankOf(current.model, config.tiers)
+  const capped = deepHeld(decision, currentTier, config)
 
   // Carrying out something final is never worth the saving: take the deep
   // tier and real reasoning, whatever the cheaper answer said, and skip the
@@ -292,8 +319,11 @@ export function route(
     forced = true
   }
 
+  // Deep is held at balanced unless allowDeep. Risk still forces the move to
+  // balanced, but never past it.
+  if (capped) tier = 'balanced'
+
   const wantedTier = TIER_ORDER.indexOf(tier)
-  const currentTier = rankOf(current.model, config.tiers)
   const wantedModel = config.tiers[tier]
   // Forcing skips the thresholds, not the tier check: a risky task already on
   // the deep tier keeps its exact id (`claude-opus-5-5[1m]` stays as it is).
@@ -339,10 +369,14 @@ export function route(
     const wantedEffort = effortScore === null ? null : effortLevel(effortScore)
     const kept = `${current.model}${current.effort === undefined ? '' : `/${current.effort}`}`
     const wanted = `${wantedModel}${wantedEffort ? `/${wantedEffort}` : ''}`
-    return { model: null, effort: null, reason: `kept ${kept}, wanted ${wanted} (${said})` }
+    const reason = capped
+      ? `kept ${kept}: deep needs allowDeep, held at ${tier} (${said})`
+      : `kept ${kept}, wanted ${wanted} (${said})`
+    return { model: null, effort: null, reason, capped }
   }
 
-  return { model, effort, reason: forced ? `${tier}, forced by risk` : `${tier} (${said})` }
+  const base = forced ? `${tier}, forced by risk` : `${tier} (${said})`
+  return { model, effort, reason: capped ? `${base}, capped: deep needs allowDeep` : base, capped }
 }
 
 /**

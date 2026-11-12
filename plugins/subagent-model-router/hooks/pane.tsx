@@ -271,7 +271,7 @@ export function registerPane(on: On) {
               {busy ? 'Haiku is picking a model…' : PANE_TITLE}
             </Text>
             <Text dimColor wrap="wrap">
-              Haiku reads each subagent task and picks Haiku, Sonnet or Opus.
+              Haiku reads each subagent task and picks Haiku or Sonnet, and Opus only when allowDeep is on.
             </Text>
           </Box>
         </Box>

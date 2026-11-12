@@ -11,7 +11,8 @@
  * under "Changes in this copy". In short:
  *
  *   - the judge is Haiku, and its JSON confidence feeds the downgrade bar, so
- *     an easy task can move down from Opus when Haiku is sure enough;
+ *     an easy task can move down from Opus when Haiku is sure enough, and a task
+ *     moves up only at a high bar, never to Opus unless `allowDeep` is true;
  *   - the tiers are full ids, the deep one `claude-opus-5-5`;
  *   - main-chat effort routing is off by default, and it leaves effort alone
  *     while Stably's `~/.claude/mods-logs/.stably-<session id>` file says active;
@@ -47,7 +48,7 @@ import {
   bareCommand,
 } from './policy.ts'
 import type { Decision, Effort, JudgeState, PolicyConfig, StepUsage } from './policy.ts'
-import { rankOf, TIER_ORDER } from './policy.ts'
+import { DEFAULT_BARS, deepHeld, rankOf, TIER_ORDER } from './policy.ts'
 import { addCard, closePane, family, openPane, registerPane, resetPane, setBusy, setCard, setOff, setSwitchHidden } from './pane.tsx'
 import type { Outcome } from '../types'
 
@@ -381,6 +382,14 @@ export function explain(
   if (!decision) return { outcome: 'no-answer', why: `Haiku gave no answer, so it kept ${BAR_NAME(current)}.` }
   const c = decision.confidence
   const sure = c === null ? 'no confidence given' : `confidence ${c.toFixed(2)}`
+  const have = rankOf(current, policy.tiers)
+  // Deep wanted but not allowed: say so, whatever the move or the bar.
+  if (deepHeld(decision, have, policy)) {
+    const held = BAR_NAME(policy.tiers.balanced)
+    return model
+      ? { outcome: 'moved', why: `Moved to ${held}, not ${BAR_NAME(policy.tiers.deep)}: deep needs allowDeep.` }
+      : { outcome: 'under-bar', why: `Held at ${BAR_NAME(current)}: deep needs allowDeep (Haiku asked for ${BAR_NAME(policy.tiers.deep)}, ${sure}).` }
+  }
   if (decision.risky !== null && decision.risky > 0.7) {
     return model
       ? { outcome: 'forced', why: `Haiku saw risk (${decision.risky.toFixed(2)}), so it went to ${BAR_NAME(model)}.` }
@@ -388,7 +397,6 @@ export function explain(
   }
   if (model) return { outcome: 'moved', why: `Moved to ${BAR_NAME(model)}: ${sure}, over the bar.` }
   const wanted = TIER_ORDER.indexOf(decision.tier)
-  const have = rankOf(current, policy.tiers)
   if (have === null || have === wanted || policy.tiers[decision.tier] === current) {
     return { outcome: 'agreed', why: `Kept ${BAR_NAME(current)}: Haiku agrees it fits (${sure}).` }
   }
@@ -423,8 +431,9 @@ export const register: Register = (on, options) => {
         balanced: named('balancedModel', 'claude-sonnet-5-5'),
         deep: named('deepModel', 'claude-opus-5-5'),
       },
-      minUpgradeConfidence: number('minUpgradeConfidence', 0.3),
-      minDowngradeConfidence: number('minDowngradeConfidence', 0.6),
+      minUpgradeConfidence: number('minUpgradeConfidence', DEFAULT_BARS.minUpgradeConfidence),
+      minDowngradeConfidence: number('minDowngradeConfidence', DEFAULT_BARS.minDowngradeConfidence),
+      allowDeep: flag('allowDeep', DEFAULT_BARS.allowDeep),
     },
   }
   const { routeSubagentModel, routeMainEffort, logDecisions, policy } = cfg
@@ -472,7 +481,7 @@ export const register: Register = (on, options) => {
     }
     const lines = [
       `${TITLE} is on.`,
-      `Judge: ${JUDGE_MODEL_ID} (JSON tier and confidence). Moves down only at confidence ${policy.minDowngradeConfidence} or more, up at ${policy.minUpgradeConfidence} or more. Time limit ${cfg.timeoutMs}ms.`,
+      `Judge: ${JUDGE_MODEL_ID} (JSON tier and confidence). Moves down only at confidence ${policy.minDowngradeConfidence} or more, up at ${policy.minUpgradeConfidence} or more. Deep tier: ${policy.allowDeep ? 'allowed' : 'off (allowDeep)'}. Time limit ${cfg.timeoutMs}ms.`,
       `Subagent model routing: ${routeSubagentModel ? 'on' : 'off'}. Main chat effort routing: ${routeMainEffort ? 'on' : 'off'}. Main chat model: never changed.`,
       `Tiers: ${policy.tiers.fast} / ${policy.tiers.balanced} / ${policy.tiers.deep}.`,
       `This chat: ${sessionPicks} picks logged, about $${usd(sessionSaved).toFixed(4)} saved at list price (${PRICE_DATE}).`,
