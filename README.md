@@ -66,4 +66,6 @@ See `SECURITY.md`.
 
 Built and maintained by Kazim Ali. Issues and pull requests are welcome, see `CONTRIBUTING.md`.
 
+Need help cutting AI costs in your own stack? Talk to Kazim at [kazim.com.au](https://kazim.com.au).
+
 MIT, see `LICENSE`. The subagent-model-router plugin is derived from an MIT-licensed model router and keeps that notice in `plugins/subagent-model-router/LICENSE`.
