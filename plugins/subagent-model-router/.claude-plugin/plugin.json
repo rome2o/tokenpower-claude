@@ -1,6 +1,6 @@
 {
   "name": "subagent-model-router",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Modified copy of an MIT-licensed Jev model router that uses Haiku in place of Jev. Haiku reads each subagent task at agent.spawn and answers in JSON with a tier and a confidence from 0 to 1; a task moves to a cheaper model only when that confidence is at least minDowngradeConfidence. Logs every pick, the model it replaced and the estimated cost difference to ~/.claude/mods-logs/savings.jsonl. No API key and no network call of its own. Never changes the main chat's model; main-chat effort routing is off by default.",
   "author": {
     "name": "Kazim Ali",
@@ -35,8 +35,8 @@
     "minUpgradeConfidence": {
       "type": "number",
       "title": "Confidence to spend more",
-      "description": "How sure Haiku must be to raise the model or the effort; being wrong here costs money, so the bar is low",
-      "default": 0.3
+      "description": "How sure Haiku must be to raise the model or the effort; being wrong here costs money, so the bar is high",
+      "default": 0.85
     },
     "minDowngradeConfidence": {
       "type": "number",
@@ -49,6 +49,12 @@
       "title": "Route subagent models",
       "description": "Pick the model of each subagent at agent.spawn (the Agent tool takes no effort)",
       "default": true
+    },
+    "allowDeep": {
+      "type": "boolean",
+      "title": "Allow the deep tier (Opus)",
+      "description": "Off by default. While off, a deep answer is capped at Sonnet and a task already on Opus is never moved up. On, the deep tier is reachable at the upgrade bar.",
+      "default": false
     },
     "routeMainEffort": {
       "type": "boolean",
