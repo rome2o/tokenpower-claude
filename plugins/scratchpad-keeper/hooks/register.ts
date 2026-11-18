@@ -4,7 +4,7 @@ import { DEFAULT_EXPIRE_DAYS, DEFAULT_MIN_BYTES, MODEL } from './constants.ts'
 import { hash8, isInside, redact, resolveDest, slug, stampOf } from './guards.ts'
 import { addItem, agentItem, askText, describe, expireOld, gather, listInbox, saveAll, setSkipped } from './inbox.ts'
 import type { Stored } from './inbox.ts'
-import { homeOf, log, tilde, toast } from './io.ts'
+import { ensureDir, homeOf, log, tilde, toast } from './io.ts'
 import { buildPrompt, freshNotes, parseNotes, renderNotes, verifyNotes } from './notes.ts'
 import { S } from './state.ts'
 import { isSwitchedOff } from './switches.ts'
@@ -109,6 +109,7 @@ async function sessionNotes($: EngineInterface) {
     const path = `${d}/${slug(S.project)}/session-notes-${stampOf(now)}-${hash8(S.sid + msgs.length)}.md`
     if (!isInside(path, d)) return
     for (const n of kept) S.quotes.add(n.quote)
+    await ensureDir($, `${d}/${slug(S.project)}`)
     await $.fs.write(path, renderNotes(kept, { project: S.project, date: new Date(now).toISOString().slice(0, 10), dropped }))
     toast($, `Session notes saved: ${tilde(path)}`)
   } catch (err) {

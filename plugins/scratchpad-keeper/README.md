@@ -31,7 +31,22 @@ When a subagent finishes, a toast says a report is waiting. The question itself 
 
 ## Where files go
 
-`destination` setting: an absolute or `~/` path. Empty uses `~/.claude/scratchpad-keeper/saved`. Each project gets its own subfolder. A relative path or one containing `..` falls back to the default. Existing files are never overwritten; a name clash gets a short hash suffix.
+The `destination` setting is an absolute path or a `~/` path. Leave it empty to use `~/.claude/scratchpad-keeper/saved`. A path like `/.mystuff` (no `~`) is a folder at the root of the disk, not in your home folder, and will probably not be writable. A relative path or one containing `..` falls back to the default. The mod creates the folders it needs.
+
+What the destination looks like after a few sessions:
+
+```
+<destination>/
+  my-project/                                  one folder per project (the working folder's name, lower-cased)
+    agent-research-queues-20261118T094200Z.md  a subagent report, with a title and a "Saved from a subagent report on <date>" line
+    competitor-pricing.md                      a scratchpad document, original file name kept
+    competitor-pricing-3fa9c1d2.md             same name saved again: a short hash is added, nothing is overwritten
+    session-notes-20261118T095100Z-ab12cd34.md session notes, only if that option is on
+  another-project/
+    ...
+```
+
+Every item you have not saved yet, and every skipped item, waits in the inbox at `~/.claude/mods-logs/scratchpad-keeper/inbox/` until you save it or it expires. That folder is the safety net, not the place to read your work. `/keeper status` prints the current destination, and `/keeper list` shows what is waiting.
 
 ## Session notes (optional, uses Haiku)
 

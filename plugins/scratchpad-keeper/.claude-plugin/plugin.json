@@ -1,6 +1,6 @@
 {
   "name": "scratchpad-keeper",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Saves subagent reports and scratchpad documents to a folder you choose before the session ends, so research is not lost. Triage, secret masking and expiry are plain local code. Optional session notes use one Haiku call and keep only notes whose quote is found verbatim in the transcript",
   "author": {
     "name": "Kazim Ali"
@@ -16,7 +16,7 @@
     "destination": {
       "type": "string",
       "title": "Destination folder",
-      "description": "Absolute path or ~/ path where saved files go, one subfolder per project. Empty uses ~/.claude/scratchpad-keeper/saved",
+      "description": "Where saved files go, one subfolder per project. Use a full path or start with ~/ (for example ~/Documents/claude-research). Empty uses ~/.claude/scratchpad-keeper/saved. A path starting with a bare / is the root of the disk, not your home folder",
       "default": ""
     },
     "minBytes": {
