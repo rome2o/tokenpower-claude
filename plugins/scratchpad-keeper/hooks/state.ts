@@ -20,5 +20,7 @@ export const S = {
   quotes: new Set<string>(),
   // Message count at the last session notes run, so one chat does not write notes twice for the same stretch.
   notesAt: 0,
+  // The engine had no chat to read in this mode (headless or background). Logged once, then notes are skipped quietly.
+  noSession: false,
   settings: { destination: '', minBytes: 400, expireDays: 14, sessionNotes: true } as Settings,
 }

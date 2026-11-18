@@ -7,14 +7,14 @@ const HOME = '/home/u'
 const QUOTE = 'Decision: use sqlite with WAL mode for the queue.'
 
 // A small in-memory engine: just the calls register.ts makes.
-function setup({ answers = [], agents = [], mkdirFails = false } = {}) {
+function setup({ answers = [], agents = [], mkdirFails = false, noChat = false } = {}) {
   const files = new Map()
   const handlers = {}
   const calls = { ask: 0, complete: 0, prompts: [], mkdirs: [] }
   const messages = [{ role: 'user', text: 'which queue?' }, { role: 'assistant', text: QUOTE }]
   const $ = {
     plugin: { root: `${HOME}/.claude/plugins/scratchpad-keeper` },
-    session: { id: async () => 'abcd1234-0000', cwd: async () => '/work/demo', info: async () => ({ scratchpadDir: '/pad' }), messages: async () => messages },
+    session: { id: async () => 'abcd1234-0000', cwd: async () => '/work/demo', info: async () => ({ scratchpadDir: '/pad' }), messages: async () => { if (noChat) throw new Error('$.session.messages is not available in this mode: no session is bound in this process'); return messages } },
     clock: { now: async () => 1_700_000_000_000 },
     fs: {
       exists: async p => files.has(p),
@@ -106,4 +106,17 @@ test('when the folder cannot be created nothing is written to the destination an
   assert.equal(savedFiles(t).length, 0)
   const log = t.files.get(`${HOME}/.claude/mods-logs/scratchpad-keeper/keeper.log`) ?? ''
   assert.match(String(log), /could not create the folder/)
+})
+
+test('with no chat to read (headless or background), notes are skipped and the reason is logged once', async () => {
+  const t = setup({ answers: ['Save'], noChat: true })
+  await t.fire('session.start')
+  await t.fire('session.compact', { trigger: 'manual' })
+  await t.fire('session.end', { reason: 'other' })
+  await t.fire('session.end', { reason: 'other' })
+  assert.equal(t.calls.complete, 0)
+  assert.equal(t.notesFiles().length, 0)
+  const log = String(t.files.get(`${HOME}/.claude/mods-logs/scratchpad-keeper/keeper.log`) ?? '')
+  assert.equal((log.match(/no chat to read/g) ?? []).length, 1)
+  assert.doesNotMatch(log, /session notes failed/)
 })
