@@ -87,7 +87,7 @@
       "name": "scratchpad-keeper",
       "source": "./plugins/scratchpad-keeper",
       "description": "Saves subagent reports and scratchpad documents to a folder you choose before the session ends. Triage, secret masking and expiry are plain local code; you are asked Save, Skip or Always. Optional session notes use one Haiku call and keep only notes whose quote is found verbatim in the transcript. It does not save tokens",
-      "version": "0.2.0"
+      "version": "0.3.0"
     }
   ]
 }

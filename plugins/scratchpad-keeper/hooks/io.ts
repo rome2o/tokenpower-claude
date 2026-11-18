@@ -18,6 +18,40 @@ export async function ensureDir($: EngineInterface, dir: string) {
   if (r.exitCode !== 0) throw new Error(`could not create the folder ${tilde(dir)}`)
 }
 
+// The command that shows a folder in the file manager, as an argv array (never shell text). Null where there is none:
+// a hosted session (the machine is not yours), WSL or an unknown system.
+export function openArgv(platform: string | undefined, dir: string, isHosted = false): string[] | null {
+  if (isHosted) return null
+  if (platform === 'macos') return ['open', dir]
+  if (platform === 'linux') return ['xdg-open', dir]
+  if (platform === 'windows') return ['explorer', dir]
+  return null
+}
+
+// Opens the folder in the file manager, making it first if it is missing. Returns a sentence for the person.
+export async function openFolder($: EngineInterface, dir: string): Promise<string> {
+  let platform: string | undefined
+  let hosted = false
+  try {
+    const info = await $.session.info()
+    platform = info.platform
+    hosted = info.isHosted === true
+  } catch {
+    // Unknown system: handled below.
+  }
+  const argv = openArgv(platform, dir, hosted)
+  if (!argv) return `No file manager is available here. The folder is ${tilde(dir)}`
+  await ensureDir($, dir)
+  try {
+    const r = await $.process.run(argv, { timeoutMs: 10_000 })
+    // Windows explorer exits 1 even when the folder opened.
+    if (r.exitCode === 0 || platform === 'windows') return `Opened ${tilde(dir)}`
+  } catch {
+    // The command is not installed.
+  }
+  return `Could not open a file manager. The folder is ${tilde(dir)}`
+}
+
 export function toast($: EngineInterface, text: string) {
   try {
     $.ui.toast(text, { timeoutMs: 8000 })
