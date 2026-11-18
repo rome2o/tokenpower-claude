@@ -6,6 +6,8 @@ A session writes documents and data into a temporary scratchpad folder, and suba
 
 This mod is type-checked against the engine's types and unit-checked (`node --test plugins/scratchpad-keeper/tests/*.test.mjs`), and `claude plugin validate` passes. It has not been run in a live Claude session. Untested in a live session: whether the question can be shown and answered at `session.end`, and whether the scratchpad path in a Write call is spelled the same as the session's scratchpad folder on macOS (the mod compares both the given and the resolved path). If the question does not show, the items stay in the inbox and the next session start tells you how many are waiting.
 
+The 0.3.0 additions (`/keeper open`, `/keeper list saved` and the pane) are unit-checked and passed `claude plugin validate`, and `claude plugin validate` reports no type errors in them beyond the import-extension warning every file of this mod shares. The pane has not been run in a live session.
+
 ## What it captures
 
 - The final report of each subagent you spawned (not engine-internal forks).
@@ -73,7 +75,22 @@ On by default through the `sessionNotes` option, and the only part that makes a 
 
 ## Commands
 
-`/keeper status`, `/keeper list`, `/keeper save <id|all>`, `/keeper always`, `/keeper never`, `/keeper ask`.
+| Command | What it does |
+| --- | --- |
+| `/keeper status` | Destination, waiting and skipped counts, always-save and notes settings. |
+| `/keeper list` | Items waiting in the inbox (and skipped ones). |
+| `/keeper list saved` | The 20 most recently saved files, newest first: date (UTC), project and path (`~` for home). |
+| `/keeper open` | Opens the destination folder in the file manager, creating it first if missing. |
+| `/keeper panel` | Opens the pane beside the chat (see Panel). |
+| `/keeper save <id\|all>` | Saves inbox items now. |
+| `/keeper always`, `/keeper never` | Turn always-save on or off. |
+| `/keeper ask` | Asks Save, Skip or Always now. |
+
+`/keeper open` runs `open` (macOS), `xdg-open` (Linux) or `explorer` (Windows) with the folder as a plain argument. In a hosted session, under WSL or on an unknown system it runs nothing and prints the path. `/keeper list saved` reads the files themselves, two levels deep (`<destination>/<project>/<file>`), so it is always current and a file you move or delete drops off the list. It lists every file in those folders, not only ones this mod wrote.
+
+## Panel
+
+`/keeper panel` opens a pane beside the chat (the terminal seats it from 110 columns when you open it yourself). It lists the inbox items with a Save and a Skip button each (skipped items only have Save), the 8 newest saves, and an Open folder button. Nothing is saved unless you press Save or use a command: the same consent as the question. It redraws when the mod adds, saves or skips an item. It is never opened by itself, and there is no setting for it. The pane has not been run in a live session yet.
 
 ## Where it writes
 

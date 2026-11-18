@@ -4,10 +4,12 @@ import { DEFAULT_EXPIRE_DAYS, DEFAULT_MIN_BYTES, MODEL } from './constants.ts'
 import { hash8, isInside, redact, resolveDest, slug, stampOf } from './guards.ts'
 import { addItem, agentItem, askText, describe, expireOld, gather, listInbox, saveAll, setSkipped } from './inbox.ts'
 import type { Stored } from './inbox.ts'
-import { ensureDir, homeOf, log, tilde, toast } from './io.ts'
+import { ensureDir, homeOf, log, openFolder, tilde, toast } from './io.ts'
 import { originFields, withFrontmatter } from './provenance.ts'
 import type { Origin } from './provenance.ts'
 import { buildPrompt, freshNotes, parseNotes, renderNotes, verifyNotes } from './notes.ts'
+import { openPane, refreshPane, registerPane } from './pane.ts'
+import { listSaved, newest, savedLine, SAVED_CAP } from './saved.ts'
 import { S } from './state.ts'
 import { isSwitchedOff } from './switches.ts'
 
@@ -63,6 +65,7 @@ async function askAndAct($: EngineInterface) {
     }
   } finally {
     S.asking = false
+    refreshPane($)
   }
 }
 
@@ -134,18 +137,25 @@ async function help($: EngineInterface, args: string): Promise<string> {
   if (sub === 'status') {
     const all = await listInbox($)
     const waiting = all.filter(s => !s.item.skipped).length
-    return `Scratchpad Keeper. Destination ${tilde(d)}. ${waiting} waiting, ${all.length - waiting} skipped (expire after ${S.settings.expireDays} days). Always-save: ${(await always($)) ? 'on' : 'off'}. Session notes: ${S.settings.sessionNotes ? 'on' : 'off'}. Commands: list, save <id|all>, always, ask.`
+    return `Scratchpad Keeper. Destination ${tilde(d)}. ${waiting} waiting, ${all.length - waiting} skipped (expire after ${S.settings.expireDays} days). Always-save: ${(await always($)) ? 'on' : 'off'}. Session notes: ${S.settings.sessionNotes ? 'on' : 'off'}. Commands: list, list saved, open, panel, save <id|all>, always, ask.`
+  }
+  if (sub === 'list' && arg === 'saved') {
+    const rows = newest(await listSaved($, d), SAVED_CAP)
+    return rows.length === 0 ? `Nothing saved under ${tilde(d)} yet.` : rows.map(savedLine).join('\n')
   }
   if (sub === 'list') {
     const all = await listInbox($)
     if (all.length === 0) return 'The inbox is empty.'
     return all.map(s => `${s.item.id}  ${s.item.skipped ? 'skipped' : 'waiting'}  ${describe(s.item)}`).join('\n')
   }
+  if (sub === 'open') return openFolder($, d)
+  if (sub === 'panel') return openPane($)
   if (sub === 'save') {
     const all = await listInbox($)
     const pick = arg === 'all' ? all : all.filter(s => s.item.id === arg)
     if (pick.length === 0) return arg ? `No inbox item matches "${arg}". Try /keeper list.` : 'Usage: /keeper save <id|all>'
     const r = await saveAll($, pick, d)
+    refreshPane($)
     return `Saved ${r.saved} to ${tilde(d)}${r.failed ? `, ${r.failed} failed (see keeper.log)` : ''}.`
   }
   if (sub === 'always') {
@@ -160,10 +170,11 @@ async function help($: EngineInterface, args: string): Promise<string> {
     await askAndAct($)
     return 'Done.'
   }
-  return 'Usage: /keeper status | list | save <id|all> | always | never | ask'
+  return 'Usage: /keeper status | list | list saved | open | panel | save <id|all> | always | never | ask'
 }
 
 export const register: Register = (on, options) => {
+  registerPane(on, dest)
   const num = (k: string, d: number) => (typeof options[k] === 'number' && Number.isFinite(options[k]) ? (options[k] as number) : d)
   on('session.start', async ($, e, next) => {
     S.home = homeOf($)
@@ -205,7 +216,7 @@ export const register: Register = (on, options) => {
       // No scratchpad: only subagent reports are captured.
     }
     try {
-      await $.command.register({ name: 'keeper', description: 'Scratchpad Keeper: status, list, save <id|all>, always, never, ask', immediate: true })
+      await $.command.register({ name: 'keeper', description: 'Scratchpad Keeper: status, list, list saved, open, panel, save <id|all>, always, never, ask', immediate: true })
     } catch (err) {
       await log($, `could not register /keeper: ${fail(err)}`)
     }
@@ -249,6 +260,7 @@ export const register: Register = (on, options) => {
         const now = await $.clock.now()
         await addItem($, agentItem({ agentId: e.agentId, title: known.description || known.name || 'subagent report', answer: e.answer, now }))
         await gather($, false, now)
+        refreshPane($)
         // Not asked here: a question inside turn.complete would hold the turn. It waits for the next prompt.
         S.pendingAsk = true
         toast($, 'A subagent report is waiting in the Scratchpad Keeper inbox. You will be asked before your next prompt, or type /keeper ask.')
