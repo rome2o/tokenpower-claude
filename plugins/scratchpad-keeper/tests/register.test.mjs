@@ -7,14 +7,14 @@ const HOME = '/home/u'
 const QUOTE = 'Decision: use sqlite with WAL mode for the queue.'
 
 // A small in-memory engine: just the calls register.ts makes.
-function setup({ answers = [], agents = [], mkdirFails = false, noChat = false } = {}) {
+function setup({ answers = [], agents = [], mkdirFails = false, noChat = false, cwd = '/work/demo' } = {}) {
   const files = new Map()
   const handlers = {}
   const calls = { ask: 0, complete: 0, prompts: [], mkdirs: [] }
   const messages = [{ role: 'user', text: 'which queue?' }, { role: 'assistant', text: QUOTE }]
   const $ = {
     plugin: { root: `${HOME}/.claude/plugins/scratchpad-keeper` },
-    session: { id: async () => 'abcd1234-0000', cwd: async () => '/work/demo', info: async () => ({ scratchpadDir: '/pad' }), messages: async () => { if (noChat) throw new Error('$.session.messages is not available in this mode: no session is bound in this process'); return messages } },
+    session: { id: async () => 'abcd1234-0000', cwd: async () => cwd, info: async () => ({ scratchpadDir: '/pad' }), messages: async () => { if (noChat) throw new Error('$.session.messages is not available in this mode: no session is bound in this process'); return messages } },
     clock: { now: async () => 1_700_000_000_000 },
     fs: {
       exists: async p => files.has(p),
@@ -119,4 +119,111 @@ test('with no chat to read (headless or background), notes are skipped and the r
   const log = String(t.files.get(`${HOME}/.claude/mods-logs/scratchpad-keeper/keeper.log`) ?? '')
   assert.equal((log.match(/no chat to read/g) ?? []).length, 1)
   assert.doesNotMatch(log, /session notes failed/)
+})
+
+const INBOX = `${HOME}/.claude/mods-logs/scratchpad-keeper/inbox/abcd1234`
+const seed = (t, item) => t.files.set(`${INBOX}/${item.id}.json`, JSON.stringify({ kind: 'file', source: '/pad/x', project: 'demo', projectPath: '~/work/demo', sid: 'abcd1234-0000', at: 1_700_000_000_000, skipped: false, ...item }))
+const saveAllNow = async t => {
+  await t.fire('session.start')
+  return t.fire('command.run', { args: 'save all' })
+}
+const fm = text => /^---\n([\s\S]*?)\n---\n/.exec(text)?.[1] ?? ''
+
+test('a saved markdown file gets a provenance header with every field', async () => {
+  const t = setup({ cwd: `${HOME}/work/demo` })
+  seed(t, { id: 'f-1', title: 'plan.md', name: 'plan.md', size: 900, text: `# Plan\n\n${'x'.repeat(500)}` })
+  await saveAllNow(t)
+  const out = t.files.get(`${SAVED}/plan.md`)
+  const head = fm(out)
+  for (const k of ['saved-by: "scratchpad-keeper"', 'project: "demo"', 'project-path: "~/work/demo"', 'session: "abcd1234"', 'source: "scratchpad-file"', 'original-name: "plan.md"']) assert.ok(head.includes(k), k)
+  assert.match(head, /saved: "2023-11-14T22:13:20\.000Z"/)
+  assert.ok(out.endsWith('x'.repeat(500)))
+})
+
+test('the home folder never appears in a header, only ~', async () => {
+  const t = setup()
+  seed(t, { id: 'f-2', title: 'n.md', name: 'n.md', size: 900, projectPath: `${HOME}/work/demo`, text: 'y'.repeat(500) })
+  await saveAllNow(t)
+  const head = fm(t.files.get(`${SAVED}/n.md`))
+  assert.ok(!head.includes(HOME))
+  assert.match(head, /project-path: "~\/work\/demo"/)
+})
+
+test('agent reports are saved with source subagent-report and the header above the title', async () => {
+  const t = setup({ answers: ['Save'], agents, cwd: `${HOME}/work/demo` })
+  await reportFlow(t)
+  const out = t.files.get(savedFiles(t)[0])
+  assert.match(out, /^---\n/)
+  assert.match(fm(out), /source: "subagent-report"/)
+  assert.match(fm(out), /project-path: "~\/work\/demo"/)
+  assert.match(out, /\n---\n\n# research queues\n/)
+})
+
+test('existing frontmatter is kept: missing keys are added inside it and existing keys are not duplicated', async () => {
+  const t = setup()
+  const tail = `\n---\n\n# Body\n${'z'.repeat(500)}`
+  seed(t, { id: 'f-3', title: 'd.md', name: 'd.md', size: 900, text: `---\ntitle: My doc\nproject: other${tail}` })
+  await saveAllNow(t)
+  const out = t.files.get(`${SAVED}/d.md`)
+  assert.equal(out.match(/^---$/gm).length, 2)
+  assert.match(out, /^---\ntitle: My doc\nproject: other\n/)
+  assert.equal(out.match(/^project:/gm).length, 1)
+  assert.match(out, /saved-by: "scratchpad-keeper"/)
+  assert.ok(out.endsWith(tail))
+})
+
+test('a json file is written byte for byte and the provenance goes to the index', async () => {
+  const t = setup()
+  const text = JSON.stringify({ a: 1, list: [1, 2, 3], pad: 'p'.repeat(500) }, null, 2)
+  seed(t, { id: 'f-4', title: 'data.json', name: 'data.json', size: 900, text })
+  await saveAllNow(t)
+  assert.equal(t.files.get(`${SAVED}/data.json`), text)
+  const lines = String(t.files.get(`${SAVED}/_keeper-index.jsonl`)).trim().split('\n')
+  assert.equal(lines.length, 1)
+  const row = JSON.parse(lines[0])
+  assert.equal(row['saved-file'], 'data.json')
+  assert.equal(row['original-name'], 'data.json')
+  assert.equal(row.source, 'scratchpad-file')
+  assert.equal(row['saved-by'], 'scratchpad-keeper')
+  assert.equal(row.session, 'abcd1234')
+})
+
+test('a second non-markdown save appends a line instead of replacing the index', async () => {
+  const t = setup()
+  seed(t, { id: 'f-5', title: 'a.csv', name: 'a.csv', size: 900, text: `a,b\n${'1,2\n'.repeat(200)}` })
+  seed(t, { id: 'f-6', title: 'b.txt', name: 'b.txt', size: 900, text: 'b'.repeat(500) })
+  await saveAllNow(t)
+  assert.equal(String(t.files.get(`${SAVED}/_keeper-index.jsonl`)).trim().split('\n').length, 2)
+})
+
+test('a name with newlines and frontmatter markers cannot inject lines into the header or the index', async () => {
+  const t = setup()
+  seed(t, { id: 'f-7', title: 'x', name: 'x\n---\nevil: true\n.md', size: 900, text: 'q'.repeat(500) })
+  seed(t, { id: 'f-8', title: 'y', name: 'y\n{"injected":1}.json', size: 900, text: `{"k":"${'q'.repeat(500)}"}` })
+  await saveAllNow(t)
+  const md = [...t.files.entries()].find(([k]) => k.startsWith(`${SAVED}/x`))[1]
+  assert.equal(md.match(/^---$/gm).length, 2)
+  assert.ok(!/^evil:/m.test(md))
+  const rows = String(t.files.get(`${SAVED}/_keeper-index.jsonl`)).trim().split('\n')
+  assert.equal(rows.length, 1)
+  assert.equal(JSON.parse(rows[0]).injected, undefined)
+})
+
+test('a key-like string in a file name is masked in the header', async () => {
+  const key = `sk-${'a1B2c3D4e5F6g7H8i9J0k1L2'}`
+  const t = setup()
+  seed(t, { id: 'f-9', title: 'k', name: `${key}.md`, size: 900, text: 'v'.repeat(500) })
+  await saveAllNow(t)
+  const all = [...t.files.entries()].filter(([k]) => k.startsWith(`${SAVED}/`)).map(([, v]) => String(v)).join('\n')
+  assert.ok(!all.includes(key))
+})
+
+test('session notes carry the header with source session-notes', async () => {
+  const t = setup({ answers: ['Save'], cwd: `${HOME}/work/demo` })
+  await t.fire('session.start')
+  await t.fire('session.end', { reason: 'other' })
+  const out = t.files.get(t.notesFiles()[0])
+  assert.match(fm(out), /source: "session-notes"/)
+  assert.match(fm(out), /project-path: "~\/work\/demo"/)
+  assert.match(out, /\n---\n\n# Session notes/)
 })

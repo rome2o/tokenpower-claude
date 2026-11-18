@@ -7,6 +7,8 @@ export const S = {
   // The first 8 letters and digits of the chat id: the name of this chat's inbox folder.
   short: '',
   project: 'project',
+  // The working folder, with the home folder shown as ~. Header only; the folder name is the slug above.
+  projectPath: '',
   scratch: '',
   scratchReal: '',
   // Files written or edited under the scratchpad that no triage has judged yet.
