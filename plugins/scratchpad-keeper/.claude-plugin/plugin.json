@@ -1,6 +1,6 @@
 {
   "name": "scratchpad-keeper",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Saves subagent reports and scratchpad documents to a folder you choose before the session ends, so research is not lost. Triage, secret masking and expiry are plain local code. Optional session notes use one Haiku call and keep only notes whose quote is found verbatim in the transcript",
   "author": {
     "name": "Kazim Ali"

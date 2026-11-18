@@ -87,7 +87,15 @@ async function notesAllowed($: EngineInterface): Promise<boolean> {
 async function sessionNotes($: EngineInterface) {
   if (!S.settings.sessionNotes || !S.home) return
   try {
-    const msgs = await $.session.messages()
+    const msgs = await $.session.messages().catch(err => {
+      if (/not available in this mode/.test(fail(err))) return null
+      throw err
+    })
+    if (msgs === null) {
+      if (!S.noSession) await log($, 'session notes skipped: no chat to read in this mode (headless or background)')
+      S.noSession = true
+      return
+    }
     if (msgs.length === 0 || msgs.length === S.notesAt) return
     if (!(await notesAllowed($))) return
     const transcript = redact(msgs.map(m => `${m.role}: ${m.text}`).join('\n')).slice(-60_000)
@@ -158,6 +166,7 @@ export const register: Register = (on, options) => {
     S.home = homeOf($)
     S.tracked.clear()
     S.notesAt = 0
+    S.noSession = false
     S.choice = ''
     S.pendingAsk = false
     S.quotes.clear()
