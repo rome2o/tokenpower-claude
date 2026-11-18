@@ -12,6 +12,12 @@ export const S = {
   // Files written or edited under the scratchpad that no triage has judged yet.
   tracked: new Map<string, { writes: number }>(),
   asking: false,
+  // What the person chose at the last question this session. Notes need Save or Always, and never follow a Skip.
+  choice: '' as '' | 'save' | 'skip' | 'always',
+  // An agent report is waiting for the next safe moment to ask (the next prompt, or the end of the session).
+  pendingAsk: false,
+  // Quotes already written to a notes file this session, so compaction and session end do not repeat a note.
+  quotes: new Set<string>(),
   // Message count at the last session notes run, so one chat does not write notes twice for the same stretch.
   notesAt: 0,
   settings: { destination: '', minBytes: 400, expireDays: 14, sessionNotes: true } as Settings,

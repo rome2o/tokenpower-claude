@@ -4,10 +4,13 @@ import { DEFAULT_DEST_SUBPATH, INBOX_DIR } from './constants.ts'
 export { DEFAULT_DEST_SUBPATH }
 export { redact } from './redact.ts'
 
-// True when p is below dir, on a path boundary. The check is on the text: p with .. in it is refused.
+// A real parent-folder segment. A name that merely contains two dots, like notes..draft.md, is not one.
+const hasDotDot = (p: string) => p.split(/[\\/]/).includes('..')
+
+// True when p is below dir, on a path boundary. The check is on the text: p with a .. segment is refused.
 export function isInside(p: unknown, dir: unknown): boolean {
   if (typeof p !== 'string' || typeof dir !== 'string' || !dir.startsWith('/')) return false
-  if (p.includes('\0') || p.includes('..') || dir.includes('..')) return false
+  if (p.includes('\0') || hasDotDot(p) || hasDotDot(dir)) return false
   const d = dir.replace(/\/+$/, '')
   return p.startsWith(`${d}/`) && p.length > d.length + 1
 }
@@ -17,7 +20,7 @@ export function resolveDest(setting: unknown, home: string): string {
   const fallback = `${home}/${DEFAULT_DEST_SUBPATH}`
   if (typeof setting !== 'string') return fallback
   const s = setting.trim().replace(/^~(?=\/|$)/, home).replace(/\/+$/, '')
-  if (!s.startsWith('/') || s.includes('..') || s.includes('\0') || s === '') return fallback
+  if (!s.startsWith('/') || hasDotDot(s) || s.includes('\0') || s === '') return fallback
   return s
 }
 

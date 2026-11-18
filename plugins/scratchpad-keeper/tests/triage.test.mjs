@@ -39,12 +39,19 @@ test('a file rewritten often ranks after a file written once and is marked work 
   assert.ok(many.rank > once.rank)
 })
 
-test('isExpired: skipped items expire after N days, pending and kept ones never', () => {
+test('isExpired: a skipped item counts from the skip time, a waiting one from when it was added', () => {
   const day = 86_400_000
   const now = 100 * day
-  assert.equal(isExpired({ at: now - 14 * day, skipped: true }, now, 14), true)
-  assert.equal(isExpired({ at: now - 14 * day + 1, skipped: true }, now, 14), false)
-  assert.equal(isExpired({ at: now - 90 * day, skipped: false }, now, 14), false)
+  assert.equal(isExpired({ at: now - 90 * day, skipped: true, skippedAt: now - 14 * day }, now, 14), true)
+  assert.equal(isExpired({ at: now - 90 * day, skipped: true, skippedAt: now - 14 * day + 1 }, now, 14), false)
+  assert.equal(isExpired({ at: now - 14 * day, skipped: false }, now, 14), true)
+  assert.equal(isExpired({ at: now - 14 * day + 1, skipped: false }, now, 14), false)
+  assert.equal(isExpired({ at: now - 90 * day, skipped: true }, now, 14), true)
+})
+
+test('real documents whose names start with cache or lock are kept, cache and lock files are not', () => {
+  for (const n of ['cache-strategy-research.md', 'lock-free-queue-notes.md', 'notes..draft.md']) assert.equal(triageFile(f(`/pad/${n}`, 2000), 400).keep, true, n)
+  for (const n of ['cache.json', 'build-cache.json', 'api_cache.json', 'yarn.lock.json', 'package-lock.json']) assert.equal(triageFile(f(`/pad/${n}`, 2000), 400).keep, false, n)
 })
 
 test('isExpired: a bad days value never expires anything', () => {

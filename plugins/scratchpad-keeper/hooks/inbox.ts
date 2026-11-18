@@ -18,6 +18,7 @@ export type Item = {
   at: number
   size: number
   skipped: boolean
+  skippedAt?: number
   text: string
 }
 
@@ -42,6 +43,7 @@ function asItem(j: unknown): Item | null {
     at: o.at,
     size: typeof o.size === 'number' ? o.size : (o.text as string).length,
     skipped: o.skipped,
+    ...(typeof o.skippedAt === 'number' ? { skippedAt: o.skippedAt } : {}),
     text: o.text as string,
   }
 }
@@ -102,7 +104,7 @@ async function removeItem($: EngineInterface, path: string) {
 
 export async function setSkipped($: EngineInterface, s: Stored) {
   try {
-    await $.fs.write(s.path, JSON.stringify({ ...s.item, skipped: true }))
+    await $.fs.write(s.path, JSON.stringify({ ...s.item, skipped: true, skippedAt: await $.clock.now() }))
   } catch (err) {
     await log($, `could not mark ${s.item.id} skipped: ${String(err instanceof Error ? err.message : err)}`)
   }

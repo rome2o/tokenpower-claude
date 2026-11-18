@@ -52,3 +52,16 @@ test('safeInboxPath only accepts paths inside the inbox', () => {
   assert.equal(safeInboxPath(`${home}/Documents/item.json`, home), false)
   assert.equal(safeInboxPath(`${home}/.claude/mods-logs/scratchpad-keeper/inbox/`, home), false)
 })
+
+test('redact masks lowercase bearer tokens and Basic auth headers in any case', () => {
+  const out = redact('authorization: bearer abcdefghijklmnop1234\nAUTHORIZATION: basic dXNlcjpwYXNzd29yZDEyMw==\nAuthorization: Basic dXNlcjpwYXNzd29yZDEyMw==')
+  assert.ok(!out.includes('abcdefghijklmnop1234'))
+  assert.ok(!out.includes('dXNlcjpwYXNzd29yZDEyMw'))
+})
+
+test('only a real .. segment is refused, not a name that contains two dots', () => {
+  assert.equal(isInside('/tmp/pad/notes..draft.md', '/tmp/pad'), true)
+  assert.equal(isInside('/tmp/pad/a/../b.md', '/tmp/pad'), false)
+  assert.equal(resolveDest('/data/my..notes', home), '/data/my..notes')
+  assert.equal(resolveDest('/data/../x', home), `${home}/.claude/scratchpad-keeper/saved`)
+})

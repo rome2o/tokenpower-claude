@@ -51,7 +51,7 @@
       "name": "mods-manager",
       "source": "./plugins/mods-manager",
       "description": "A Mods pane that finds every mod on this Mac by itself, turns each one on or off in every chat, and opens the side-pane ones",
-      "version": "0.2.0"
+      "version": "0.2.1"
     },
     {
       "name": "token-savings-tracker",

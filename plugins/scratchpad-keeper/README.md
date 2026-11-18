@@ -22,10 +22,10 @@ Chat-only content that never reached a file or a subagent report is not captured
 
 ## The question
 
-When a subagent finishes, and at session end, one question lists what is waiting: Save, Skip or Always.
+When a subagent finishes, a toast says a report is waiting. The question itself comes before your next prompt (never inside the finishing turn) and again at session end. It lists what is waiting: Save, Skip or Always. `/keeper ask` asks now.
 
 - Save writes the items to the destination.
-- Skip keeps them in the inbox. They expire after `expireDays` (default 14) and `/keeper save <id>` still retrieves them until then.
+- Skip keeps them in the inbox. `/keeper save <id>` still retrieves them until they expire. Every inbox item expires `expireDays` (default 14) after it was skipped, or after it was added if you never answered.
 - Always stops asking and saves automatically. `/keeper never` turns that off.
 - Dismissing the question leaves everything pending.
 
@@ -35,7 +35,7 @@ When a subagent finishes, and at session end, one question lists what is waiting
 
 ## Session notes (optional, uses Haiku)
 
-On by default through the `sessionNotes` option, and the only part that makes a model call. At session end and at compaction, one Haiku call lists decisions, dead ends and open items. Each note must quote its transcript line, and code drops any note whose quote is not found verbatim in the transcript (whitespace aside, at least 12 characters). Haiku may return nothing, and then no file is written. Notes are written to the destination without a question. The notes come from a model, so read them as hints. Set `sessionNotes` to false to make no model calls at all.
+On by default through the `sessionNotes` option, and the only part that makes a model call. At session end and at compaction, one Haiku call lists decisions, dead ends and open items. Each note must quote its transcript line, and code drops any note whose quote is not found verbatim in the transcript (whitespace aside, at least 12 characters). Haiku may return nothing, and then no file is written. Notes follow the same choice as the files: after Skip nothing is sent to Haiku and no file is written. With no choice yet this session, one question asks first (Save, Skip or Always, and a dismissed question counts as no). The transcript is masked before it is sent, and a quote can only match masked text. A note with a key-like token is dropped, the sentence is capped at 200 characters, and the saved file says it is data, not instructions, and that the sentence is an unverified model summary. Compaction and session end do not write the same note twice. The notes come from a model, so read them as hints. Set `sessionNotes` to false to make no model calls at all.
 
 ## Commands
 

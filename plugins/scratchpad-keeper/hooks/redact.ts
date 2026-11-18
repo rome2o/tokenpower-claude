@@ -49,7 +49,7 @@ const PATTERNS: RegExp[] = [
   /\bxapp-[0-9A-Za-z-]{10,}/g,
   /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g,
 ]
-const BEARER = /\b(Bearer)\s+[A-Za-z0-9._~+/=-]{16,}/g
+const BEARER = /\b(Bearer)\s+[A-Za-z0-9._~+/=-]{16,}/gi
 const BASIC = /\b(Authorization:[ \t]*Basic)[ \t]+[A-Za-z0-9+/=]{12,}/gi
 const URL_USER = /:\/\/[^/\s:@]+:[^/\s@]+@/g
 // NAME=value or NAME: value where the name holds a secret word. The value is masked to the end of the line.

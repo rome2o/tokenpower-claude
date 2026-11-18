@@ -5,7 +5,7 @@ import { hash8, isInside, redact, resolveDest, slug, stampOf } from './guards.ts
 import { addItem, agentItem, askText, describe, expireOld, gather, listInbox, saveAll, setSkipped } from './inbox.ts'
 import type { Stored } from './inbox.ts'
 import { homeOf, log, tilde, toast } from './io.ts'
-import { buildPrompt, parseNotes, renderNotes, verifyNotes } from './notes.ts'
+import { buildPrompt, freshNotes, parseNotes, renderNotes, verifyNotes } from './notes.ts'
 import { S } from './state.ts'
 import { isSwitchedOff } from './switches.ts'
 
@@ -23,6 +23,8 @@ async function always($: EngineInterface): Promise<boolean> {
   }
 }
 
+const noteAsk = (d: string) => `Write session notes to ${tilde(d)}? A masked copy of this chat is sent to Haiku once and costs tokens.`
+
 const mine = async ($: EngineInterface): Promise<Stored[]> => (await listInbox($)).filter(s => !s.item.skipped && s.item.sid === S.sid).sort((a, b) => a.item.at - b.item.at)
 
 // One question for the batch: Save, Skip or Always. A dismissed question leaves every item pending.
@@ -34,6 +36,7 @@ async function askAndAct($: EngineInterface) {
     if (list.length === 0) return
     const d = dest()
     if (await always($)) {
+      S.choice = 'always'
       const r = await saveAll($, list, d)
       toast($, `Saved ${r.saved} item${r.saved === 1 ? '' : 's'} to ${tilde(d)}${r.failed ? `, ${r.failed} failed (see keeper.log)` : ''}.`)
       return
@@ -45,6 +48,7 @@ async function askAndAct($: EngineInterface) {
       await log($, 'ask was dismissed or could not be shown; items stay in the inbox')
       return
     }
+    S.choice = answer === 'Skip' ? 'skip' : answer === 'Always' ? 'always' : answer === 'Save' ? 'save' : S.choice
     if (answer === 'Skip') {
       for (const s of list) await setSkipped($, s)
       toast($, `Skipped. They stay in the inbox for ${S.settings.expireDays} days: /keeper list`)
@@ -60,12 +64,32 @@ async function askAndAct($: EngineInterface) {
   }
 }
 
+// Session notes follow the same choice as the files. After a Skip nothing is sent and nothing is written. With no
+// choice yet this session, one question asks first; a dismissed question counts as no.
+async function notesAllowed($: EngineInterface): Promise<boolean> {
+  if (await always($)) return true
+  if (S.choice === 'save' || S.choice === 'always') return true
+  if (S.choice === 'skip' || S.asking) return false
+  S.asking = true
+  try {
+    const answer = await $.ui.ask(noteAsk(dest()), ['Save', 'Skip', 'Always'])
+    S.choice = answer === 'Skip' ? 'skip' : answer === 'Always' ? 'always' : answer === 'Save' ? 'save' : ''
+    if (answer === 'Always') await $.store.set('always', true)
+    return answer === 'Save' || answer === 'Always'
+  } catch {
+    return false
+  } finally {
+    S.asking = false
+  }
+}
+
 // Phase 2: one Haiku pass. Notes whose quote is not in the transcript are dropped by code; no notes means no file.
 async function sessionNotes($: EngineInterface) {
   if (!S.settings.sessionNotes || !S.home) return
   try {
     const msgs = await $.session.messages()
     if (msgs.length === 0 || msgs.length === S.notesAt) return
+    if (!(await notesAllowed($))) return
     const transcript = redact(msgs.map(m => `${m.role}: ${m.text}`).join('\n')).slice(-60_000)
     const res = await $.model.complete({ model: MODEL, prompt: buildPrompt(transcript), maxTokens: 1500, timeoutMs: 30_000 })
     if (!res.isAnswered) {
@@ -73,7 +97,9 @@ async function sessionNotes($: EngineInterface) {
       return
     }
     S.notesAt = msgs.length
-    const { kept, dropped } = verifyNotes(parseNotes(res.text), transcript)
+    const verified = verifyNotes(parseNotes(res.text), transcript)
+    const dropped = verified.dropped
+    const kept = freshNotes(verified.kept, S.quotes)
     if (kept.length === 0) {
       await log($, `session notes: nothing kept (${dropped} dropped)`)
       return
@@ -82,6 +108,7 @@ async function sessionNotes($: EngineInterface) {
     const d = dest()
     const path = `${d}/${slug(S.project)}/session-notes-${stampOf(now)}-${hash8(S.sid + msgs.length)}.md`
     if (!isInside(path, d)) return
+    for (const n of kept) S.quotes.add(n.quote)
     await $.fs.write(path, renderNotes(kept, { project: S.project, date: new Date(now).toISOString().slice(0, 10), dropped }))
     toast($, `Session notes saved: ${tilde(path)}`)
   } catch (err) {
@@ -130,6 +157,9 @@ export const register: Register = (on, options) => {
     S.home = homeOf($)
     S.tracked.clear()
     S.notesAt = 0
+    S.choice = ''
+    S.pendingAsk = false
+    S.quotes.clear()
     S.settings = {
       destination: typeof options.destination === 'string' ? options.destination : '',
       minBytes: num('minBytes', DEFAULT_MIN_BYTES),
@@ -159,7 +189,11 @@ export const register: Register = (on, options) => {
     } catch {
       // No scratchpad: only subagent reports are captured.
     }
-    await $.command.register({ name: 'keeper', description: 'Scratchpad Keeper: status, list, save <id|all>, always, never, ask', immediate: true })
+    try {
+      await $.command.register({ name: 'keeper', description: 'Scratchpad Keeper: status, list, save <id|all>, always, never, ask', immediate: true })
+    } catch (err) {
+      await log($, `could not register /keeper: ${fail(err)}`)
+    }
     if (!(await isSwitchedOff($))) {
       try {
         await expireOld($, await $.clock.now())
@@ -200,12 +234,26 @@ export const register: Register = (on, options) => {
         const now = await $.clock.now()
         await addItem($, agentItem({ agentId: e.agentId, title: known.description || known.name || 'subagent report', answer: e.answer, now }))
         await gather($, false, now)
-        await askAndAct($)
+        // Not asked here: a question inside turn.complete would hold the turn. It waits for the next prompt.
+        S.pendingAsk = true
+        toast($, 'A subagent report is waiting in the Scratchpad Keeper inbox. You will be asked before your next prompt, or type /keeper ask.')
       }
     } catch (err) {
       await log($, `turn.complete failed: ${fail(err)}`)
     }
     return res
+  })
+
+  on('prompt.submit', async ($, e, next) => {
+    if (S.pendingAsk) {
+      S.pendingAsk = false
+      try {
+        if (S.home && !(await isSwitchedOff($))) await askAndAct($)
+      } catch (err) {
+        await log($, `ask failed: ${fail(err)}`)
+      }
+    }
+    return next(e)
   })
 
   on('session.end', async ($, e, next) => {
