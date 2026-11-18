@@ -5,6 +5,8 @@ import { hash8, isInside, redact, resolveDest, slug, stampOf } from './guards.ts
 import { addItem, agentItem, askText, describe, expireOld, gather, listInbox, saveAll, setSkipped } from './inbox.ts'
 import type { Stored } from './inbox.ts'
 import { ensureDir, homeOf, log, tilde, toast } from './io.ts'
+import { originFields, withFrontmatter } from './provenance.ts'
+import type { Origin } from './provenance.ts'
 import { buildPrompt, freshNotes, parseNotes, renderNotes, verifyNotes } from './notes.ts'
 import { S } from './state.ts'
 import { isSwitchedOff } from './switches.ts'
@@ -118,7 +120,8 @@ async function sessionNotes($: EngineInterface) {
     if (!isInside(path, d)) return
     for (const n of kept) S.quotes.add(n.quote)
     await ensureDir($, `${d}/${slug(S.project)}`)
-    await $.fs.write(path, renderNotes(kept, { project: S.project, date: new Date(now).toISOString().slice(0, 10), dropped }))
+    const origin: Origin = { project: slug(S.project), projectPath: S.projectPath, sid: S.sid, saved: new Date(now).toISOString(), source: 'session-notes', originalName: path.slice(path.lastIndexOf('/') + 1) }
+    await $.fs.write(path, withFrontmatter(renderNotes(kept, { project: S.project, date: new Date(now).toISOString().slice(0, 10), dropped }), originFields(origin, S.home)))
     toast($, `Session notes saved: ${tilde(path)}`)
   } catch (err) {
     await log($, `session notes failed: ${fail(err)}`)
@@ -185,8 +188,10 @@ export const register: Register = (on, options) => {
     try {
       const cwd = await $.session.cwd()
       S.project = slug(cwd.slice(cwd.lastIndexOf('/') + 1))
+      S.projectPath = tilde(cwd)
     } catch {
       S.project = 'project'
+      S.projectPath = ''
     }
     S.scratch = ''
     S.scratchReal = ''

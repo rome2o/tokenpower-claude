@@ -4,7 +4,7 @@ A session writes documents and data into a temporary scratchpad folder, and suba
 
 ## Status
 
-Version 0.1.0 is type-checked against the engine's types and unit-checked (`node --test plugins/scratchpad-keeper/tests/*.test.mjs`), and `claude plugin validate` passes. It has not been run in a live Claude session. Untested in a live session: whether the question can be shown and answered at `session.end`, and whether the scratchpad path in a Write call is spelled the same as the session's scratchpad folder on macOS (the mod compares both the given and the resolved path). If the question does not show, the items stay in the inbox and the next session start tells you how many are waiting.
+This mod is type-checked against the engine's types and unit-checked (`node --test plugins/scratchpad-keeper/tests/*.test.mjs`), and `claude plugin validate` passes. It has not been run in a live Claude session. Untested in a live session: whether the question can be shown and answered at `session.end`, and whether the scratchpad path in a Write call is spelled the same as the session's scratchpad folder on macOS (the mod compares both the given and the resolved path). If the question does not show, the items stay in the inbox and the next session start tells you how many are waiting.
 
 ## What it captures
 
@@ -38,6 +38,7 @@ What the destination looks like after a few sessions:
 ```
 <destination>/
   my-project/                                  one folder per project (the working folder's name, lower-cased)
+    _keeper-index.jsonl                        one line per saved non-markdown file: where it came from
     agent-research-queues-20261118T094200Z.md  a subagent report, with a title and a "Saved from a subagent report on <date>" line
     competitor-pricing.md                      a scratchpad document, original file name kept
     competitor-pricing-3fa9c1d2.md             same name saved again: a short hash is added, nothing is overwritten
@@ -45,6 +46,24 @@ What the destination looks like after a few sessions:
   another-project/
     ...
 ```
+
+Every markdown file the mod saves starts with a short header that says where it came from, so a file can be traced to its project and chat later. Two projects with the same folder name share a folder, and the header is what tells their files apart:
+
+```
+---
+saved-by: "scratchpad-keeper"
+project: "my-project"
+project-path: "~/work/my-project"
+session: "ab12cd34"
+saved: "2026-11-18T09:42:00.000Z"
+source: "subagent-report"
+original-name: "agent-research-queues-20261118T094200Z.md"
+---
+```
+
+- `source` is `subagent-report`, `scratchpad-file` or `session-notes`. `project-path` shows your home folder as `~`. Every value is one line, and key-like strings are masked.
+- A file that already starts with a frontmatter block keeps it: the keys above are added inside it, and a key that is already there is left alone.
+- `.json`, `.csv`, `.txt` and `.html` files are saved exactly as they are, because a header would break them. Instead, one JSON line per saved file is appended to `<destination>/<project>/_keeper-index.jsonl` with the same fields plus `saved-file` (the name it was saved under).
 
 Every item you have not saved yet, and every skipped item, waits in the inbox at `~/.claude/mods-logs/scratchpad-keeper/inbox/` until you save it or it expires. That folder is the safety net, not the place to read your work. `/keeper status` prints the current destination, and `/keeper list` shows what is waiting.
 

@@ -3,6 +3,8 @@ import type { EngineInterface } from 'claude-code'
 import { ASK_ITEMS, INBOX_DIR, MAX_FILE_BYTES } from './constants.ts'
 import { cleanLine, hash8, isInside, redact, safeInboxPath, slug, stampOf } from './guards.ts'
 import { ensureDir, log, tilde, toast } from './io.ts'
+import { indexLine, originFields, withFrontmatter } from './provenance.ts'
+import type { Origin } from './provenance.ts'
 import { S } from './state.ts'
 import { extOf, isExpired, triageFile } from './triage.ts'
 
@@ -14,6 +16,7 @@ export type Item = {
   name: string
   source: string
   project: string
+  projectPath?: string
   sid: string
   at: number
   size: number
@@ -39,6 +42,7 @@ function asItem(j: unknown): Item | null {
     name: o.name as string,
     source: typeof o.source === 'string' ? o.source : '',
     project: o.project as string,
+    ...(typeof o.projectPath === 'string' ? { projectPath: o.projectPath } : {}),
     sid: typeof o.sid === 'string' ? o.sid : '',
     at: o.at,
     size: typeof o.size === 'number' ? o.size : (o.text as string).length,
@@ -135,7 +139,20 @@ export async function saveItem($: EngineInterface, s: Stored, dest: string): Pro
     if (!isInside(path, dest)) return ''
     await ensureDir($, dir)
     const body = it.kind === 'agent' ? `# ${it.title}\n\nSaved from a subagent report on ${new Date(it.at).toISOString().slice(0, 10)}.\n\n${it.text}\n` : it.text
-    await $.fs.write(path, body)
+    const origin: Origin = { project: slug(it.project), projectPath: it.projectPath ?? '', sid: it.sid, saved: new Date(await $.clock.now()).toISOString(), source: it.kind === 'agent' ? 'subagent-report' : 'scratchpad-file', originalName: it.name }
+    if (extOf(it.name) === 'md') await $.fs.write(path, withFrontmatter(body, originFields(origin, S.home)))
+    else {
+      // Other types are written unchanged: a header would corrupt them. The link lives in a JSON-lines index instead.
+      await $.fs.write(path, body)
+      const index = `${dir}/_keeper-index.jsonl`
+      let old = ''
+      try {
+        old = String(await $.fs.read(index))
+      } catch {
+        old = ''
+      }
+      await $.fs.write(index, `${old}${indexLine(originFields(origin, S.home, path.slice(path.lastIndexOf('/') + 1)))}`)
+    }
     await removeItem($, s.path)
     return path
   } catch (err) {
@@ -172,6 +189,7 @@ export function agentItem(args: { agentId: string; title: string; answer: string
     name: `agent-${slug(title, 30)}-${stampOf(args.now)}.md`,
     source: `agent ${args.agentId}`,
     project: S.project,
+    projectPath: S.projectPath,
     sid: S.sid,
     at: args.now,
     size: args.answer.length,
@@ -211,6 +229,7 @@ export async function gather($: EngineInterface, final: boolean, now: number): P
         name: base,
         source: r.path,
         project: S.project,
+        projectPath: S.projectPath,
         sid: S.sid,
         at: now,
         size: r.size,
