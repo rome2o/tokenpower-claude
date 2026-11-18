@@ -1,0 +1,41 @@
+{
+  "name": "scratchpad-keeper",
+  "version": "0.1.0",
+  "description": "Saves subagent reports and scratchpad documents to a folder you choose before the session ends, so research is not lost. Triage, secret masking and expiry are plain local code. Optional session notes use one Haiku call and keep only notes whose quote is found verbatim in the transcript",
+  "author": {
+    "name": "Kazim Ali"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mod",
+    "function-hooks",
+    "productivity",
+    "notes"
+  ],
+  "userConfig": {
+    "destination": {
+      "type": "string",
+      "title": "Destination folder",
+      "description": "Absolute path or ~/ path where saved files go, one subfolder per project. Empty uses ~/.claude/scratchpad-keeper/saved",
+      "default": ""
+    },
+    "minBytes": {
+      "type": "number",
+      "title": "Smallest file to keep (bytes)",
+      "description": "Scratchpad files smaller than this are skipped",
+      "default": 400
+    },
+    "expireDays": {
+      "type": "number",
+      "title": "Days before skipped items expire",
+      "description": "Skipped inbox items are deleted after this many days",
+      "default": 14
+    },
+    "sessionNotes": {
+      "type": "boolean",
+      "title": "Session notes (uses Haiku)",
+      "description": "At session end and compaction, one Haiku call extracts decisions, dead ends and open items, each with a verbatim quote. Turn off to make no model calls",
+      "default": true
+    }
+  }
+}

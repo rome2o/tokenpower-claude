@@ -37,6 +37,7 @@ Some mods can use more tools. They work without them.
    /plugin install context-bloat-auditor@tokenpower-claude
    /plugin install context-meter@tokenpower-claude
    /plugin install compaction-pruner@tokenpower-claude
+   /plugin install scratchpad-keeper@tokenpower-claude
    ```
 
 4. Load them. Type:

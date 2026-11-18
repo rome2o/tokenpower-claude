@@ -123,6 +123,7 @@ const KNOWN: Record<string, Known> = {
   'chat-relay': { title: 'Chat Relay', what: 'Lets a chat list, message and start other chats', group: 'chat', note: 'The orchestrator chat uses it to start test chats.' },
   'claude-pet-bridge': { title: 'Claude Pet Bridge', what: 'Lets Claude Pet send prompts into this chat', group: 'chat', note: 'Chat Relay needs it to message open chats.' },
   'prompt-editor': { title: 'Prompt Editor', what: 'Edits prompts and replies on screen only, for recordings', group: 'chat' },
+  'scratchpad-keeper': { title: 'Scratchpad Keeper', what: 'Saves subagent reports and scratchpad files before the chat ends', group: 'chat', tip: '/keeper to see what is waiting' },
   'mods-manager': { title: 'Mods Manager', what: 'This switchboard', group: 'chat', tip: '/mods to open' },
 
   'context-meter': { title: 'Context Meter', what: 'Colour bar of how full the chat is', group: 'show', hide: true, tip: '/context-meter to show or hide' },

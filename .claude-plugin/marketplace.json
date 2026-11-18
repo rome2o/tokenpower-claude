@@ -3,7 +3,7 @@
   "owner": {
     "name": "Kazim Ali"
   },
-  "description": "Thirteen mods that cut token cost or show where tokens go, plus a /mods switchboard and a /savings pane",
+  "description": "Fourteen mods that cut token cost or show where tokens go, plus a /mods switchboard and a /savings pane",
   "plugins": [
     {
       "name": "large-file-reader",
@@ -51,7 +51,7 @@
       "name": "mods-manager",
       "source": "./plugins/mods-manager",
       "description": "A Mods pane that finds every mod on this Mac by itself, turns each one on or off in every chat, and opens the side-pane ones",
-      "version": "0.2.0"
+      "version": "0.2.1"
     },
     {
       "name": "token-savings-tracker",
@@ -81,6 +81,12 @@
       "name": "compaction-pruner",
       "source": "./plugins/compaction-pruner",
       "description": "Off by default. When you compact, shortens old large tool results with simple local rules, keeps the original text (secrets masked) in a folder you can open, and lets core write the summary. It deletes nothing and makes no network or model calls. /prune dry shows what it would do first",
+      "version": "0.1.0"
+    },
+    {
+      "name": "scratchpad-keeper",
+      "source": "./plugins/scratchpad-keeper",
+      "description": "Saves subagent reports and scratchpad documents to a folder you choose before the session ends. Triage, secret masking and expiry are plain local code; you are asked Save, Skip or Always. Optional session notes use one Haiku call and keep only notes whose quote is found verbatim in the transcript. It does not save tokens",
       "version": "0.1.0"
     }
   ]
