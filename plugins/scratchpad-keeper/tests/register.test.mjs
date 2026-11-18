@@ -7,10 +7,10 @@ const HOME = '/home/u'
 const QUOTE = 'Decision: use sqlite with WAL mode for the queue.'
 
 // A small in-memory engine: just the calls register.ts makes.
-function setup({ answers = [], agents = [] } = {}) {
+function setup({ answers = [], agents = [], mkdirFails = false } = {}) {
   const files = new Map()
   const handlers = {}
-  const calls = { ask: 0, complete: 0, prompts: [] }
+  const calls = { ask: 0, complete: 0, prompts: [], mkdirs: [] }
   const messages = [{ role: 'user', text: 'which queue?' }, { role: 'assistant', text: QUOTE }]
   const $ = {
     plugin: { root: `${HOME}/.claude/plugins/scratchpad-keeper` },
@@ -32,7 +32,7 @@ function setup({ answers = [], agents = [] } = {}) {
       },
       stat: async p => (files.has(p) ? { kind: 'file', size: files.get(p).length, mtimeMs: 0, isLink: false } : Promise.reject(new Error('nope'))),
     },
-    process: { run: async argv => { files.delete(argv[2]); return { exitCode: 0, stdout: '', stderr: '' } } },
+    process: { run: async argv => { if (argv[0] === 'mkdir') { calls.mkdirs.push(argv[2]); return { exitCode: mkdirFails && !argv[2].includes('/mods-logs/') ? 1 : 0, stdout: '', stderr: '' } } files.delete(argv[2]); return { exitCode: 0, stdout: '', stderr: '' } } },
     ui: { ask: async () => { calls.ask++; const a = answers.shift(); if (a === undefined) throw new Error('dismissed'); return a }, toast: () => {} },
     store: (() => { const m = new Map(); return { get: async k => m.get(k), set: async (k, v) => void m.set(k, v) } })(),
     command: { register: async () => {} },
@@ -81,4 +81,29 @@ test('a subagent finishing does not ask inside turn.complete; the question comes
   assert.equal(t2.calls.ask, 0)
   await t2.fire('prompt.submit', { text: 'next' })
   assert.equal(t2.calls.ask, 1)
+})
+
+const SAVED = `${HOME}/.claude/scratchpad-keeper/saved/demo`
+const reportFlow = async t => {
+  await t.fire('session.start')
+  await t.fire('turn.complete', { agentId: 'ag1', reason: 'answer', answer: 'A long report about queues.' })
+  await t.fire('prompt.submit', { text: 'next' })
+}
+const agents = [{ id: 'ag1', kind: 'local_agent', description: 'research queues' }]
+const savedFiles = t => [...t.files.keys()].filter(k => k.startsWith(`${SAVED}/`))
+
+test('Save into a destination that does not exist yet creates the project folder first, then writes', async () => {
+  const t = setup({ answers: ['Save'], agents })
+  await reportFlow(t)
+  assert.ok(t.calls.mkdirs.includes(SAVED))
+  assert.equal(savedFiles(t).length, 1)
+  assert.match(t.files.get(savedFiles(t)[0]), /A long report about queues\./)
+})
+
+test('when the folder cannot be created nothing is written to the destination and the failure is logged', async () => {
+  const t = setup({ answers: ['Save'], agents, mkdirFails: true })
+  await reportFlow(t)
+  assert.equal(savedFiles(t).length, 0)
+  const log = t.files.get(`${HOME}/.claude/mods-logs/scratchpad-keeper/keeper.log`) ?? ''
+  assert.match(String(log), /could not create the folder/)
 })

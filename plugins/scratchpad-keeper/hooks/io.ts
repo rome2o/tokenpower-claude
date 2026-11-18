@@ -12,6 +12,12 @@ export function homeOf($: EngineInterface): string {
 
 export const tilde = (p: string) => (S.home && p.startsWith(`${S.home}/`) ? `~${p.slice(S.home.length)}` : p)
 
+// Makes the folder and its parents. The engine's file write is not relied on to do it, as in the other mods. The path is a plain argument, never shell text.
+export async function ensureDir($: EngineInterface, dir: string) {
+  const r = await $.process.run(['mkdir', '-p', dir], { timeoutMs: 10_000 })
+  if (r.exitCode !== 0) throw new Error(`could not create the folder ${tilde(dir)}`)
+}
+
 export function toast($: EngineInterface, text: string) {
   try {
     $.ui.toast(text, { timeoutMs: 8000 })
@@ -41,6 +47,7 @@ async function append($: EngineInterface, text: string) {
       old = ''
     }
     const at = new Date(await $.clock.now()).toISOString()
+    await ensureDir($, `${S.home}/${STORE_SUBPATH}`)
     await $.fs.write(path, `${old}${at} ${cleanLine(text, 200)}\n`.slice(-20_000))
   } catch {
     // Logging must never break a session.

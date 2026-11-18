@@ -2,7 +2,7 @@ import type { EngineInterface } from 'claude-code'
 
 import { ASK_ITEMS, INBOX_DIR, MAX_FILE_BYTES } from './constants.ts'
 import { cleanLine, hash8, isInside, redact, safeInboxPath, slug, stampOf } from './guards.ts'
-import { log, tilde, toast } from './io.ts'
+import { ensureDir, log, tilde, toast } from './io.ts'
 import { S } from './state.ts'
 import { extOf, isExpired, triageFile } from './triage.ts'
 
@@ -84,6 +84,7 @@ export async function addItem($: EngineInterface, item: Item): Promise<boolean> 
   if (!safeInboxPath(path, S.home)) return false
   try {
     if (await $.fs.exists(path)) return false
+    await ensureDir($, `${inboxRoot()}/${S.short}`)
     await $.fs.write(path, JSON.stringify(item))
     return true
   } catch (err) {
@@ -132,6 +133,7 @@ export async function saveItem($: EngineInterface, s: Stored, dest: string): Pro
     let path = `${dir}/${it.name}`
     if (await $.fs.exists(path)) path = `${dir}/${stem}-${hash8(it.text)}${ext}`
     if (!isInside(path, dest)) return ''
+    await ensureDir($, dir)
     const body = it.kind === 'agent' ? `# ${it.title}\n\nSaved from a subagent report on ${new Date(it.at).toISOString().slice(0, 10)}.\n\n${it.text}\n` : it.text
     await $.fs.write(path, body)
     await removeItem($, s.path)
